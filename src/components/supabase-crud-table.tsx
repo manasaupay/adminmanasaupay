@@ -157,12 +157,27 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {column.label}
               </span>
-              <input
-                type="text"
-                value={String(newRow[column.key] ?? "")}
-                onChange={(e) => updateNewRowValue(column.key, e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-              />
+              {column.options && column.options.length > 0 ? (
+                <select
+                  value={String(newRow[column.key] ?? "")}
+                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                >
+                  <option value="">— select —</option>
+                  {column.options.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={String(newRow[column.key] ?? "")}
+                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                />
+              )}
             </label>
           ))}
           {config.approveField && (
@@ -245,12 +260,27 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                   <tr key={id} className="border-b last:border-0">
                     {config.columns.map((c) => (
                       <td key={c.key} className="max-w-xs truncate px-4 py-3">
-                        <input
-                          type="text"
-                          value={formatValue(editable[c.key])}
-                          onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                        />
+                        {c.options && c.options.length > 0 ? (
+                          <select
+                            value={String(editable[c.key] ?? "")}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                          >
+                            <option value="">— select —</option>
+                            {c.options.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={formatValue(editable[c.key])}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                          />
+                        )}
                       </td>
                     ))}
                     <td className="px-4 py-3">

@@ -17,7 +17,8 @@ export type AdminTableConfig = {
   featuredField?: "is_featured";
   activeField?: "active";
   availabilityField?: "availability";
-  columns: { key: string; label: string }[];
+  // columns can include optional predefined options to render selects in the UI
+  columns: { key: string; label: string; options?: string[] }[];
 };
 
 export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
@@ -30,7 +31,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category" },
+      { key: "category", label: "Category", options: ["Grocery", "Food", "Retail", "Health", "Services"] },
       { key: "phone", label: "Phone" },
     ],
   },
@@ -42,7 +43,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     approveField: "is_approved",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category" },
+      { key: "category", label: "Category", options: ["Home Services", "Health", "Education", "Transport", "Professional"] },
       { key: "contact", label: "Contact" },
     ],
   },
@@ -68,7 +69,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "title", label: "Title" },
       { key: "salary", label: "Salary" },
-      { key: "location", label: "Location" },
+      { key: "location", label: "Location", options: ["City Center", "Suburb", "Remote"] },
     ],
   },
   updates: {
@@ -78,7 +79,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "updates",
     columns: [
       { key: "title", label: "Title" },
-      { key: "category", label: "Category" },
+      { key: "category", label: "Category", options: ["Alert", "Event", "Info"] },
       { key: "content", label: "Content" },
     ],
   },
@@ -89,7 +90,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "ads",
     activeField: "active",
     columns: [
-      { key: "type", label: "Type" },
+      { key: "type", label: "Type", options: ["banner", "in-page", "popup"] },
       { key: "image_url", label: "Image URL" },
       { key: "redirect_link", label: "Link" },
     ],
@@ -102,7 +103,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "name", label: "Name" },
       { key: "phone", label: "Phone" },
-      { key: "role", label: "Role" },
+      { key: "role", label: "Role", options: ["user", "admin", "moderator"] },
     ],
   },
   notifications: {
