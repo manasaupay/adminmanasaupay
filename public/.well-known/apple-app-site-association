@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.manasa.upay",
+        "paths": ["/business/*", "/service/*", "/job/*", "/auto/*", "/update/*"]
+      }
+    ]
+  }
+}
