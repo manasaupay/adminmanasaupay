@@ -45,3 +45,38 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
+
+export async function POST(req: NextRequest, { params }: Params) {
+  const { table } = await params;
+  if (!isAdminTable(table)) {
+    return NextResponse.json({ error: "Invalid table" }, { status: 400 });
+  }
+  const configError = getAdminConfigError();
+  if (configError) {
+    return NextResponse.json({ error: configError }, { status: 503 });
+  }
+  const payload = await req.json();
+  const supabase = getAdminClient()!;
+  const { data, error } = await supabase.from(table).insert(payload).select().single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
+
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const { table } = await params;
+  if (!isAdminTable(table)) {
+    return NextResponse.json({ error: "Invalid table" }, { status: 400 });
+  }
+  const configError = getAdminConfigError();
+  if (configError) {
+    return NextResponse.json({ error: configError }, { status: 503 });
+  }
+  const { id } = await req.json();
+  if (!id) {
+    return NextResponse.json({ error: "id required" }, { status: 400 });
+  }
+  const supabase = getAdminClient()!;
+  const { data, error } = await supabase.from(table).delete().eq("id", id).select();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
