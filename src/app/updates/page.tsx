@@ -1,11 +1,6 @@
-import { SectionPage } from "@/components/section-page";
+import { ADMIN_TABLES } from "@/lib/admin-tables";
+import { SupabaseCrudTable } from "@/components/supabase-crud-table";
 
 export default function UpdatesPage() {
-  return (
-    <SectionPage
-      title="City Updates"
-      description="Publish notices, events, school and market updates."
-      sectionKey="updates"
-    />
-  );
+  return <SupabaseCrudTable config={ADMIN_TABLES.updates} />;
 }

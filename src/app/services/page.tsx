@@ -1,11 +1,6 @@
-import { SectionPage } from "@/components/section-page";
+import { ADMIN_TABLES } from "@/lib/admin-tables";
+import { SupabaseCrudTable } from "@/components/supabase-crud-table";
 
 export default function ServicesPage() {
-  return (
-    <SectionPage
-      title="Services Management"
-      description="Approve service providers and manage local service listings."
-      sectionKey="services"
-    />
-  );
+  return <SupabaseCrudTable config={ADMIN_TABLES.services} />;
 }

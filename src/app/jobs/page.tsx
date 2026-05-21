@@ -1,11 +1,6 @@
-import { SectionPage } from "@/components/section-page";
+import { ADMIN_TABLES } from "@/lib/admin-tables";
+import { SupabaseCrudTable } from "@/components/supabase-crud-table";
 
 export default function JobsPage() {
-  return (
-    <SectionPage
-      title="Jobs Management"
-      description="Approve job posts, remove spam, and edit listings."
-      sectionKey="jobs"
-    />
-  );
+  return <SupabaseCrudTable config={ADMIN_TABLES.jobs} />;
 }

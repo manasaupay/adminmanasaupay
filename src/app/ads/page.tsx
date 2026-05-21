@@ -1,11 +1,6 @@
-import { SectionPage } from "@/components/section-page";
+import { ADMIN_TABLES } from "@/lib/admin-tables";
+import { SupabaseCrudTable } from "@/components/supabase-crud-table";
 
 export default function AdsPage() {
-  return (
-    <SectionPage
-      title="Advertisement Management"
-      description="Slider banners, in-page sponsored ads, and popup ads with expiry."
-      sectionKey="ads"
-    />
-  );
+  return <SupabaseCrudTable config={ADMIN_TABLES.ads} />;
 }

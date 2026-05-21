@@ -10,7 +10,8 @@ export function AdminSidebar() {
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-4 py-5">
-        <p className="text-lg font-bold text-teal-800">{APP_NAME}</p>
+        <p className="text-lg font-bold text-teal-800">Manasa Upay</p>
+        <p className="text-xs text-slate-400">{APP_NAME}</p>
         <p className="text-xs text-slate-500">Manasa city platform</p>
       </div>
       <nav className="flex-1 space-y-1 p-3">

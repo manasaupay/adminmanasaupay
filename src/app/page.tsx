@@ -1,25 +1,53 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { NAV_ITEMS } from "@/lib/constants";
 
-const stats = [
-  { label: "Total Users", value: "—" },
-  { label: "Businesses", value: "—" },
-  { label: "Active Ads", value: "—" },
-  { label: "Notification Clicks", value: "—" },
-];
-
 export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    users: "—",
+    businesses: "—",
+    activeAds: "—",
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) {
+          setError(d.error);
+          return;
+        }
+        setStats({
+          users: String(d.users),
+          businesses: String(d.businesses),
+          activeAds: String(d.activeAds),
+        });
+      })
+      .catch(() => setError("Could not load stats"));
+  }, []);
+
+  const cards = [
+    { label: "Total Users", value: stats.users },
+    { label: "Businesses", value: stats.businesses },
+    { label: "Active Ads", value: stats.activeAds },
+    { label: "Notification Clicks", value: "—" },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-        <p className="text-slate-600">
-          Overview of Manasa Upay — connect Supabase for live metrics.
-        </p>
+        <p className="text-slate-600">Manasa Upay — live counts from Supabase.</p>
+        {error && (
+          <p className="mt-2 text-sm text-red-600">{error}</p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((s) => (
+        {cards.map((s) => (
           <div
             key={s.label}
             className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
