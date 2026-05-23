@@ -90,7 +90,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "ads",
     activeField: "active",
     columns: [
-      { key: "type", label: "Type", options: ["banner", "in-page", "popup"] },
+      { key: "type", label: "Type", options: ["slider", "in_page", "popup"] },
       { key: "image_url", label: "Image URL" },
       { key: "redirect_link", label: "Link" },
     ],

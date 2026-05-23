@@ -14,7 +14,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: configError }, { status: 503 });
   }
   const supabase = getAdminClient()!;
-  const { data, error } = await supabase.from(table).select("*");
+  const { data, error } = await supabase
+    .from(table)
+    .select("*")
+    .order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
