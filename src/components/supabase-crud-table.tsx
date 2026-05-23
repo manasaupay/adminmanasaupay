@@ -73,36 +73,60 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
 
   async function patch(id: string, updates: Record<string, unknown>) {
     setSaving(true);
-    await fetch(`/api/admin/${config.key}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...updates }),
-    });
-    setSaving(false);
-    load();
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/${config.key}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to save changes");
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(id: string) {
     setSaving(true);
-    await fetch(`/api/admin/${config.key}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    setSaving(false);
-    load();
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/${config.key}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to delete row");
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function create(values: EditableRow) {
     setSaving(true);
-    await fetch(`/api/admin/${config.key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    setSaving(false);
-    load();
-    setNewRow(createBlankRow(config));
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/${config.key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to create row");
+      setNewRow(createBlankRow(config));
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function updateRowValue(id: string, key: string, value: string | boolean) {
