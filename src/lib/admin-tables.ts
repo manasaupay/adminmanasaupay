@@ -5,6 +5,7 @@ export type AdminTableKey =
   | "jobs"
   | "updates"
   | "ads"
+  | "categories"
   | "users"
   | "notifications";
 
@@ -18,7 +19,7 @@ export type AdminTableConfig = {
   activeField?: "active";
   availabilityField?: "availability";
   // columns can include optional predefined options to render selects in the UI
-  columns: { key: string; label: string; options?: string[] }[];
+  columns: { key: string; label: string; options?: string[]; type?: "text" | "enum" | "date" | "json" | "boolean" | "image" }[];
 };
 
 export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
@@ -31,7 +32,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category", options: ["Grocery", "Food", "Retail", "Health", "Services"] },
+      { key: "category", label: "Category", options: ["Grocery", "Food", "Retail", "Health", "Services"], type: "enum" },
       { key: "phone", label: "Phone" },
     ],
   },
@@ -43,7 +44,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     approveField: "is_approved",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category", options: ["Home Services", "Health", "Education", "Transport", "Professional"] },
+      { key: "category", label: "Category", options: ["Home Services", "Health", "Education", "Transport", "Professional"], type: "enum" },
       { key: "contact", label: "Contact" },
     ],
   },
@@ -69,7 +70,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "title", label: "Title" },
       { key: "salary", label: "Salary" },
-      { key: "location", label: "Location", options: ["City Center", "Suburb", "Remote"] },
+      { key: "location", label: "Location", options: ["City Center", "Suburb", "Remote"], type: "enum" },
     ],
   },
   updates: {
@@ -79,7 +80,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "updates",
     columns: [
       { key: "title", label: "Title" },
-      { key: "category", label: "Category", options: ["Alert", "Event", "Info"] },
+      { key: "category", label: "Category", options: ["Alert", "Event", "Info"], type: "enum" },
       { key: "content", label: "Content" },
     ],
   },
@@ -90,9 +91,9 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "ads",
     activeField: "active",
     columns: [
-      { key: "type", label: "Type", options: ["slider", "in_page", "popup"] },
-      { key: "image_url", label: "Image URL" },
-      { key: "redirect_link", label: "Link" },
+      { key: "type", label: "Type", options: ["slider", "in_page", "popup"], type: "enum" },
+      { key: "image_url", label: "Image URL", type: "image" },
+      { key: "redirect_link", label: "Link", type: "text" },
     ],
   },
   users: {
@@ -103,7 +104,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "name", label: "Name" },
       { key: "phone", label: "Phone" },
-      { key: "role", label: "Role", options: ["user", "admin", "moderator"] },
+      { key: "role", label: "Role", options: ["user", "admin", "moderator"], type: "enum" },
     ],
   },
   notifications: {
@@ -113,8 +114,20 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "notifications",
     columns: [
       { key: "title", label: "Title" },
-      { key: "audience", label: "Audience" },
-      { key: "deep_link", label: "Deep link" },
+      { key: "audience", label: "Audience", options: ["all", "businesses", "service_providers", "auto_drivers", "selected"], type: "enum" },
+      { key: "deep_link", label: "Deep link", type: "text" },
+    ],
+  },
+  categories: {
+    key: "categories",
+    title: "Categories",
+    description: "Manage category sets used across the app (businesses, services, updates, ads, etc.).",
+    sectionKey: "categories",
+    columns: [
+      { key: "key", label: "Key" },
+      { key: "label", label: "Label" },
+      { key: "scope", label: "Scope", options: ["businesses", "services", "updates", "ads", "global"] },
+      { key: "meta", label: "Meta (JSON)" },
     ],
   },
 };

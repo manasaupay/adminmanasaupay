@@ -10,7 +10,8 @@ type EditableRow = Record<string, string | boolean>;
 function createBlankRow(config: AdminTableConfig): EditableRow {
   const row: EditableRow = {};
   config.columns.forEach((column) => {
-    row[column.key] = "";
+    if (column.type === "boolean") row[column.key] = false;
+    else row[column.key] = "";
   });
   if (config.approveField) row[config.approveField] = false;
   if (config.featuredField) row[config.featuredField] = false;
@@ -23,7 +24,19 @@ function createEditableRow(config: AdminTableConfig, row: Row): EditableRow {
   const editable: EditableRow = {};
   config.columns.forEach((column) => {
     const value = row[column.key];
-    editable[column.key] = value === null || value === undefined ? "" : String(value);
+    if (column.type === "date") {
+      editable[column.key] = value === null || value === undefined ? "" : String(value).slice(0, 10);
+    } else if (column.type === "json") {
+      try {
+        editable[column.key] = value === null || value === undefined ? "" : JSON.stringify(value);
+      } catch {
+        editable[column.key] = value === null || value === undefined ? "" : String(value);
+      }
+    } else if (column.type === "boolean") {
+      editable[column.key] = Boolean(value);
+    } else {
+      editable[column.key] = value === null || value === undefined ? "" : String(value);
+    }
   });
   if (config.approveField) editable[config.approveField] = Boolean(row[config.approveField]);
   if (config.featuredField) editable[config.featuredField] = Boolean(row[config.featuredField]);
@@ -75,10 +88,11 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     setSaving(true);
     setError(null);
     try {
+      const payload = preparePayload(updates as EditableRow);
       const res = await fetch(`/api/admin/${config.key}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...updates }),
+        body: JSON.stringify({ id, ...payload }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to save changes");
@@ -113,10 +127,11 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     setSaving(true);
     setError(null);
     try {
+      const payload = preparePayload(values);
       const res = await fetch(`/api/admin/${config.key}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create row");
@@ -150,6 +165,34 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     return value === null || value === undefined ? "" : String(value);
   }
 
+  function preparePayload(values: EditableRow): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
+    config.columns.forEach((col) => {
+      const raw = values[col.key];
+      if (raw === undefined) return;
+      if (raw === "") return;
+      if (col.type === "json") {
+        try {
+          payload[col.key] = JSON.parse(String(raw));
+        } catch {
+          payload[col.key] = String(raw);
+        }
+      } else if (col.type === "date") {
+        payload[col.key] = String(raw);
+      } else if (col.type === "boolean") {
+        payload[col.key] = Boolean(raw);
+      } else {
+        payload[col.key] = raw;
+      }
+    });
+    // include special fields (booleans managed outside columns)
+    if (config.approveField && values[config.approveField] !== undefined) payload[config.approveField] = values[config.approveField];
+    if (config.featuredField && values[config.featuredField] !== undefined) payload[config.featuredField] = values[config.featuredField];
+    if (config.activeField && values[config.activeField] !== undefined) payload[config.activeField] = values[config.activeField];
+    if (config.availabilityField && values[config.availabilityField] !== undefined) payload[config.availabilityField] = values[config.availabilityField];
+    return payload;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -181,7 +224,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {column.label}
               </span>
-              {column.options && column.options.length > 0 ? (
+              {column.type === "enum" && column.options ? (
                 <select
                   value={String(newRow[column.key] ?? "")}
                   onChange={(e) => updateNewRowValue(column.key, e.target.value)}
@@ -194,6 +237,34 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                     </option>
                   ))}
                 </select>
+              ) : column.type === "boolean" ? (
+                <input
+                  type="checkbox"
+                  checked={Boolean(newRow[column.key])}
+                  onChange={(e) => updateNewRowValue(column.key, e.target.checked)}
+                  className="mt-1"
+                />
+              ) : column.type === "date" ? (
+                <input
+                  type="date"
+                  value={String(newRow[column.key] ?? "")}
+                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                />
+              ) : column.type === "json" ? (
+                <textarea
+                  value={String(newRow[column.key] ?? "")}
+                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                />
+              ) : column.type === "image" ? (
+                <input
+                  type="text"
+                  placeholder="Image URL"
+                  value={String(newRow[column.key] ?? "")}
+                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                />
               ) : (
                 <input
                   type="text"
@@ -284,27 +355,54 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                   <tr key={id} className="border-b last:border-0">
                     {config.columns.map((c) => (
                       <td key={c.key} className="max-w-xs truncate px-4 py-3">
-                        {c.options && c.options.length > 0 ? (
-                          <select
-                            value={String(editable[c.key] ?? "")}
-                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                          >
-                            <option value="">— select —</option>
-                            {c.options.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            value={formatValue(editable[c.key])}
-                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                          />
-                        )}
+                            {c.type === "enum" && c.options ? (
+                              <select
+                                value={String(editable[c.key] ?? "")}
+                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                              >
+                                <option value="">— select —</option>
+                                {c.options.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : c.type === "boolean" ? (
+                              <input
+                                type="checkbox"
+                                checked={Boolean(editable[c.key])}
+                                onChange={(e) => updateRowValue(id, c.key, e.target.checked)}
+                              />
+                            ) : c.type === "date" ? (
+                              <input
+                                type="date"
+                                value={String(editable[c.key] ?? "")}
+                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                              />
+                            ) : c.type === "json" ? (
+                              <textarea
+                                value={String(editable[c.key] ?? "")}
+                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                              />
+                            ) : c.type === "image" ? (
+                              <input
+                                type="text"
+                                placeholder="Image URL"
+                                value={String(editable[c.key] ?? "")}
+                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={formatValue(editable[c.key])}
+                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                              />
+                            )}
                       </td>
                     ))}
                     <td className="px-4 py-3">
