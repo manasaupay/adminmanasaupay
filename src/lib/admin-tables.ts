@@ -6,6 +6,7 @@ export type AdminTableKey =
   | "updates"
   | "ads"
   | "categories"
+  | "settings"
   | "users"
   | "notifications";
 
@@ -126,8 +127,22 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "key", label: "Key" },
       { key: "label", label: "Label" },
-      { key: "scope", label: "Scope", options: ["businesses", "services", "updates", "ads", "global"] },
-      { key: "meta", label: "Meta (JSON)" },
+      { key: "scope", label: "Scope", options: ["businesses", "services", "updates", "ads", "global"], type: "enum" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  settings: {
+    key: "settings",
+    title: "Platform Settings",
+    description: "Manage app-wide settings for features, UI, ads, notifications, and system configuration.",
+    sectionKey: "settings",
+    columns: [
+      { key: "key", label: "Key" },
+      { key: "setting_type", label: "Value Type", options: ["string", "boolean", "number", "json", "url", "color"], type: "enum" },
+      { key: "group_name", label: "Group", options: ["general", "app", "ads", "notifications", "businesses", "services", "security"], type: "enum" },
+      { key: "value", label: "Value", type: "text" },
+      { key: "description", label: "Description", type: "text" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
     ],
   },
 };

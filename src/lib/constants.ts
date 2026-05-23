@@ -11,6 +11,8 @@ export const NAV_ITEMS = [
   { href: "/auto-drivers", label: "Auto Drivers" },
   { href: "/jobs", label: "Jobs" },
   { href: "/ads", label: "Advertisements" },
+  { href: "/categories", label: "Categories" },
+  { href: "/settings", label: "Settings" },
   { href: "/notifications", label: "Notifications" },
   { href: "/updates", label: "City Updates" },
 ] as const;
