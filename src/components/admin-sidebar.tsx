@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
+import { NAV_ITEMS } from "@/lib/constants";
 
 export function AdminSidebar() {
   const pathname = usePathname();

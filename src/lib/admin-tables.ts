@@ -1,14 +1,32 @@
 export type AdminTableKey =
+  | "users"
   | "businesses"
   | "services"
   | "auto_drivers"
   | "jobs"
-  | "updates"
-  | "ads"
   | "categories"
-  | "settings"
-  | "users"
-  | "notifications";
+  | "ads"
+  | "popup_ads"
+  | "sponsored_shops"
+  | "notifications"
+  | "updates"
+  | "news"
+  | "events"
+  | "offers"
+  | "properties"
+  | "resale"
+  | "reviews"
+  | "follows"
+  | "analytics"
+  | "settings";
+
+export type AdminColumnType =
+  | "text"
+  | "enum"
+  | "date"
+  | "json"
+  | "boolean"
+  | "image";
 
 export type AdminTableConfig = {
   key: AdminTableKey;
@@ -19,40 +37,101 @@ export type AdminTableConfig = {
   featuredField?: "is_featured";
   activeField?: "active";
   availabilityField?: "availability";
-  // columns can include optional predefined options to render selects in the UI
-  columns: { key: string; label: string; options?: string[]; type?: "text" | "enum" | "date" | "json" | "boolean" | "image" }[];
+  columns: {
+    key: string;
+    label: string;
+    options?: string[];
+    type?: AdminColumnType;
+  }[];
 };
 
+const categoryScopes = [
+  "global",
+  "businesses",
+  "services",
+  "auto_drivers",
+  "jobs",
+  "properties",
+  "resale",
+  "offers",
+  "events",
+  "news",
+  "ads",
+  "creators",
+];
+
+const pagePlacements = [
+  "homepage",
+  "category",
+  "subcategory",
+  "search",
+  "business",
+  "services",
+  "jobs",
+  "properties",
+  "offers",
+  "resale",
+  "news",
+  "events",
+];
+
 export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
+  users: {
+    key: "users",
+    title: "User Management",
+    description: "Manage users, roles, verification, blocking, and activity metadata.",
+    sectionKey: "users",
+    columns: [
+      { key: "name", label: "Name" },
+      { key: "phone", label: "Phone" },
+      { key: "role", label: "Role", options: ["user", "business", "service_provider", "auto_driver", "admin"], type: "enum" },
+      { key: "is_verified", label: "Verified", type: "boolean" },
+      { key: "is_blocked", label: "Blocked", type: "boolean" },
+      { key: "meta", label: "Activity / Meta (JSON)", type: "json" },
+    ],
+  },
   businesses: {
     key: "businesses",
     title: "Business Management",
-    description: "Approve businesses, edit listings, manage featured shops.",
+    description: "Approve businesses, manage premium pages, badges, categories, banners, and sponsorship state.",
     sectionKey: "businesses",
     approveField: "is_approved",
     featuredField: "is_featured",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category", options: ["Grocery", "Food", "Retail", "Health", "Services"], type: "enum" },
+      { key: "category", label: "Category" },
+      { key: "subcategory", label: "Subcategory" },
       { key: "phone", label: "Phone" },
+      { key: "cover_image", label: "Cover Image", type: "image" },
+      { key: "logo_url", label: "Logo", type: "image" },
+      { key: "is_verified", label: "Verified", type: "boolean" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "priority", label: "Priority" },
+      { key: "meta", label: "Profile Meta (JSON)", type: "json" },
     ],
   },
   services: {
     key: "services",
     title: "Services Management",
-    description: "Approve service providers and manage listings.",
+    description: "Approve providers, assign categories/subcategories, and manage sponsored service listings.",
     sectionKey: "services",
     approveField: "is_approved",
+    featuredField: "is_featured",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category", options: ["Home Services", "Health", "Education", "Transport", "Professional"], type: "enum" },
+      { key: "category", label: "Category" },
+      { key: "subcategory", label: "Subcategory" },
       { key: "contact", label: "Contact" },
+      { key: "area", label: "Area" },
+      { key: "is_verified", label: "Verified", type: "boolean" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "meta", label: "Service Meta (JSON)", type: "json" },
     ],
   },
   auto_drivers: {
     key: "auto_drivers",
-    title: "Auto Drivers",
-    description: "Approve drivers and manage availability.",
+    title: "Auto Booking",
+    description: "Approve driver profiles and manage availability, areas, call, WhatsApp, and share metadata.",
     sectionKey: "auto_drivers",
     approveField: "is_approved",
     availabilityField: "availability",
@@ -60,88 +139,273 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "name", label: "Name" },
       { key: "phone", label: "Phone" },
       { key: "vehicle_number", label: "Vehicle" },
+      { key: "area", label: "Area" },
+      { key: "whatsapp", label: "WhatsApp" },
+      { key: "meta", label: "Driver Meta (JSON)", type: "json" },
     ],
   },
   jobs: {
     key: "jobs",
     title: "Jobs Management",
-    description: "Approve and manage job posts.",
+    description: "Approve posts, link businesses, manage applications and sponsored job visibility.",
     sectionKey: "jobs",
     approveField: "is_approved",
+    featuredField: "is_featured",
     columns: [
       { key: "title", label: "Title" },
       { key: "salary", label: "Salary" },
-      { key: "location", label: "Location", options: ["City Center", "Suburb", "Remote"], type: "enum" },
+      { key: "location", label: "Location" },
+      { key: "contact", label: "Contact" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "application_link", label: "Apply Link" },
+      { key: "meta", label: "Job Meta (JSON)", type: "json" },
     ],
   },
-  updates: {
-    key: "updates",
-    title: "City Updates",
-    description: "Publish notices and local updates.",
-    sectionKey: "updates",
+  categories: {
+    key: "categories",
+    title: "Dynamic Categories",
+    description: "Create nested categories and subcategories with icons, colors, banners, ordering, and visibility.",
+    sectionKey: "categories",
+    activeField: "active",
     columns: [
-      { key: "title", label: "Title" },
-      { key: "category", label: "Category", options: ["Alert", "Event", "Info"], type: "enum" },
-      { key: "content", label: "Content" },
+      { key: "key", label: "Key" },
+      { key: "label", label: "Label" },
+      { key: "scope", label: "Scope", options: categoryScopes, type: "enum" },
+      { key: "parent_key", label: "Parent Key" },
+      { key: "icon_url", label: "Icon", type: "image" },
+      { key: "banner_url", label: "Banner", type: "image" },
+      { key: "color", label: "Color" },
+      { key: "sort_order", label: "Sort Order" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
     ],
   },
   ads: {
     key: "ads",
     title: "Advertisement Management",
-    description: "Banners, in-page and popup ads.",
+    description: "Manage slider, inline, sponsored card, featured shop, and search-result ad placements.",
     sectionKey: "ads",
     activeField: "active",
     columns: [
-      { key: "type", label: "Type", options: ["slider", "in_page", "popup"], type: "enum" },
-      { key: "image_url", label: "Image URL", type: "image" },
-      { key: "redirect_link", label: "Link", type: "text" },
+      { key: "type", label: "Type", options: ["slider", "in_page", "popup", "sponsored_card", "featured_shop", "search_result"], type: "enum" },
+      { key: "placement", label: "Placement", options: pagePlacements, type: "enum" },
+      { key: "title", label: "Title" },
+      { key: "image_url", label: "Image", type: "image" },
+      { key: "redirect_link", label: "Link" },
+      { key: "category_key", label: "Category Target" },
+      { key: "subcategory_key", label: "Subcategory Target" },
+      { key: "priority", label: "Priority" },
+      { key: "start_date", label: "Start", type: "date" },
+      { key: "expiry_date", label: "End", type: "date" },
+      { key: "meta", label: "Targeting / Meta (JSON)", type: "json" },
     ],
   },
-  users: {
-    key: "users",
-    title: "User Management",
-    description: "View users and roles.",
-    sectionKey: "users",
+  popup_ads: {
+    key: "popup_ads",
+    title: "Popup Ads",
+    description: "Control popup creatives, CTAs, trigger rules, frequency, category targeting, and priority.",
+    sectionKey: "ads",
+    activeField: "active",
     columns: [
-      { key: "name", label: "Name" },
-      { key: "phone", label: "Phone" },
-      { key: "role", label: "Role", options: ["user", "admin", "moderator"], type: "enum" },
+      { key: "title", label: "Title" },
+      { key: "image_url", label: "Image", type: "image" },
+      { key: "cta_label", label: "CTA Label" },
+      { key: "redirect_link", label: "Link" },
+      { key: "trigger_type", label: "Trigger", options: ["app_open", "timed", "category", "campaign"], type: "enum" },
+      { key: "frequency", label: "Frequency" },
+      { key: "category_key", label: "Category Target" },
+      { key: "priority", label: "Priority" },
+      { key: "start_at", label: "Start", type: "date" },
+      { key: "end_at", label: "End", type: "date" },
+    ],
+  },
+  sponsored_shops: {
+    key: "sponsored_shops",
+    title: "Sponsored Shops",
+    description: "Approve sponsorships and control homepage, category, search, and offer placements.",
+    sectionKey: "sponsored_shops",
+    activeField: "active",
+    columns: [
+      { key: "business_id", label: "Business ID" },
+      { key: "placement", label: "Placement", options: ["homepage", "category", "search", "offers", "carousel"], type: "enum" },
+      { key: "category_key", label: "Category Target" },
+      { key: "priority", label: "Priority" },
+      { key: "start_date", label: "Start", type: "date" },
+      { key: "end_date", label: "End", type: "date" },
+      { key: "meta", label: "Campaign Meta (JSON)", type: "json" },
     ],
   },
   notifications: {
     key: "notifications",
-    title: "Notifications Log",
-    description: "Sent notifications history.",
+    title: "Notifications",
+    description: "Create broadcast, personalized, category-based, and automated FCM notifications with deep links.",
     sectionKey: "notifications",
     columns: [
       { key: "title", label: "Title" },
-      { key: "audience", label: "Audience", options: ["all", "businesses", "service_providers", "auto_drivers", "selected"], type: "enum" },
-      { key: "deep_link", label: "Deep link", type: "text" },
+      { key: "message", label: "Message" },
+      { key: "image", label: "Image", type: "image" },
+      { key: "audience", label: "Audience", options: ["all", "businesses", "service_providers", "auto_drivers", "selected", "categories", "users"], type: "enum" },
+      { key: "deep_link", label: "Deep Link" },
+      { key: "target_meta", label: "Targets (JSON)", type: "json" },
     ],
   },
-  categories: {
-    key: "categories",
-    title: "Categories",
-    description: "Manage category sets used across the app (businesses, services, updates, ads, etc.).",
-    sectionKey: "categories",
+  updates: {
+    key: "updates",
+    title: "City Updates",
+    description: "Publish card-based city notices, announcements, alerts, and community updates.",
+    sectionKey: "updates",
+    featuredField: "is_featured",
     columns: [
-      { key: "key", label: "Key" },
-      { key: "label", label: "Label" },
-      { key: "scope", label: "Scope", options: ["businesses", "services", "updates", "ads", "global"], type: "enum" },
+      { key: "title", label: "Title" },
+      { key: "category", label: "Category" },
+      { key: "content", label: "Content" },
+      { key: "image", label: "Image", type: "image" },
+      { key: "scheduled_at", label: "Schedule", type: "date" },
       { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  news: {
+    key: "news",
+    title: "News Management",
+    description: "Add, schedule, publish, and trend local news and announcements.",
+    sectionKey: "news",
+    activeField: "active",
+    featuredField: "is_featured",
+    columns: [
+      { key: "title", label: "Title" },
+      { key: "category", label: "Category" },
+      { key: "summary", label: "Summary" },
+      { key: "image_url", label: "Image", type: "image" },
+      { key: "published_at", label: "Publish Date", type: "date" },
+      { key: "is_trending", label: "Trending", type: "boolean" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  events: {
+    key: "events",
+    title: "Events Management",
+    description: "Create event cards with banners, schedules, organizer details, and promotions.",
+    sectionKey: "events",
+    activeField: "active",
+    featuredField: "is_featured",
+    columns: [
+      { key: "title", label: "Title" },
+      { key: "organizer", label: "Organizer" },
+      { key: "location", label: "Location" },
+      { key: "banner_url", label: "Banner", type: "image" },
+      { key: "event_date", label: "Event Date", type: "date" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  offers: {
+    key: "offers",
+    title: "Offers Management",
+    description: "Manage business offers, discount banners, sponsored promotions, and expiry dates.",
+    sectionKey: "offers",
+    activeField: "active",
+    featuredField: "is_featured",
+    columns: [
+      { key: "business_id", label: "Business ID" },
+      { key: "title", label: "Title" },
+      { key: "discount_text", label: "Discount" },
+      { key: "banner_url", label: "Banner", type: "image" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "start_date", label: "Start", type: "date" },
+      { key: "end_date", label: "End", type: "date" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  properties: {
+    key: "properties",
+    title: "Properties Management",
+    description: "Approve listings, manage pricing, images, location metadata, and featured placement.",
+    sectionKey: "properties",
+    approveField: "is_approved",
+    featuredField: "is_featured",
+    columns: [
+      { key: "title", label: "Title" },
+      { key: "property_type", label: "Type", options: ["residential", "commercial", "plot", "rental"], type: "enum" },
+      { key: "price", label: "Price" },
+      { key: "location", label: "Location" },
+      { key: "contact", label: "Contact" },
+      { key: "image_url", label: "Image", type: "image" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  resale: {
+    key: "resale",
+    title: "Resale Management",
+    description: "Approve resale items, remove spam, and manage sponsored resale placements.",
+    sectionKey: "resale",
+    approveField: "is_approved",
+    featuredField: "is_featured",
+    columns: [
+      { key: "title", label: "Title" },
+      { key: "category", label: "Category" },
+      { key: "price", label: "Price" },
+      { key: "location", label: "Location" },
+      { key: "contact", label: "Contact" },
+      { key: "image_url", label: "Image", type: "image" },
+      { key: "is_sponsored", label: "Sponsored", type: "boolean" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  reviews: {
+    key: "reviews",
+    title: "Reviews & Ratings",
+    description: "Moderate star ratings, written reviews, images, reports, replies, and verified reviewer state.",
+    sectionKey: "reviews",
+    activeField: "active",
+    columns: [
+      { key: "target_type", label: "Target", options: ["business", "service", "property", "resale", "auto"], type: "enum" },
+      { key: "target_id", label: "Target ID" },
+      { key: "rating", label: "Rating" },
+      { key: "comment", label: "Review" },
+      { key: "image_urls", label: "Images (JSON)", type: "json" },
+      { key: "business_reply", label: "Business Reply" },
+      { key: "is_verified_reviewer", label: "Verified Reviewer", type: "boolean" },
+      { key: "reported_count", label: "Reports" },
+    ],
+  },
+  follows: {
+    key: "follows",
+    title: "Follow System",
+    description: "Inspect follow relationships for businesses, services, creators, categories, and listings.",
+    sectionKey: "follows",
+    activeField: "active",
+    columns: [
+      { key: "user_id", label: "User ID" },
+      { key: "target_type", label: "Target", options: ["business", "service", "creator", "category", "property"], type: "enum" },
+      { key: "target_id", label: "Target ID" },
+      { key: "notification_preferences", label: "Notification Preferences (JSON)", type: "json" },
+    ],
+  },
+  analytics: {
+    key: "analytics",
+    title: "Analytics Events",
+    description: "Track ad clicks, notification clicks, top searches, sponsorship performance, and module activity.",
+    sectionKey: "analytics",
+    columns: [
+      { key: "event_name", label: "Event" },
+      { key: "entity_type", label: "Entity Type" },
+      { key: "entity_id", label: "Entity ID" },
+      { key: "user_id", label: "User ID" },
+      { key: "metadata", label: "Metadata (JSON)", type: "json" },
     ],
   },
   settings: {
     key: "settings",
     title: "Platform Settings",
-    description: "Manage app-wide settings for features, UI, ads, notifications, and system configuration.",
+    description: "Manage app-wide settings for branding, UI, ads, notifications, features, and security.",
     sectionKey: "settings",
+    activeField: "active",
     columns: [
       { key: "key", label: "Key" },
       { key: "setting_type", label: "Value Type", options: ["string", "boolean", "number", "json", "url", "color"], type: "enum" },
-      { key: "group_name", label: "Group", options: ["general", "app", "ads", "notifications", "businesses", "services", "security"], type: "enum" },
-      { key: "value", label: "Value", type: "text" },
-      { key: "description", label: "Description", type: "text" },
+      { key: "group_name", label: "Group", options: ["general", "app", "branding", "ads", "notifications", "businesses", "services", "security"], type: "enum" },
+      { key: "value", label: "Value" },
+      { key: "description", label: "Description" },
       { key: "meta", label: "Meta (JSON)", type: "json" },
     ],
   },

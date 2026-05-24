@@ -77,12 +77,11 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   }, [config]);
 
   useEffect(() => {
-    load();
+    const timer = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
-
-  useEffect(() => {
-    setNewRow(createBlankRow(config));
-  }, [config]);
 
   async function patch(id: string, updates: Record<string, unknown>) {
     setSaving(true);
