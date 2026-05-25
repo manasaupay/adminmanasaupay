@@ -18,6 +18,9 @@ export type AdminTableKey =
   | "reviews"
   | "follows"
   | "analytics"
+  | "call_sessions"
+  | "chat_threads"
+  | "chat_messages"
   | "settings";
 
 export type AdminColumnType =
@@ -83,6 +86,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "users",
     columns: [
       { key: "name", label: "Name" },
+      { key: "email", label: "Email" },
       { key: "phone", label: "Phone" },
       { key: "role", label: "Role", options: ["user", "business", "service_provider", "auto_driver", "admin"], type: "enum" },
       { key: "is_verified", label: "Verified", type: "boolean" },
@@ -392,6 +396,44 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "entity_id", label: "Entity ID" },
       { key: "user_id", label: "User ID" },
       { key: "metadata", label: "Metadata (JSON)", type: "json" },
+    ],
+  },
+  call_sessions: {
+    key: "call_sessions",
+    title: "In-app Calls",
+    description: "Track Manasa Upay call requests, ringing state, accepted calls, missed calls, and partner response.",
+    sectionKey: "calls",
+    columns: [
+      { key: "target_type", label: "Target Type" },
+      { key: "target_id", label: "Target ID" },
+      { key: "target_name", label: "Target Name" },
+      { key: "target_phone", label: "Phone" },
+      { key: "status", label: "Status", options: ["calling", "ringing", "accepted", "missed", "ended", "declined"], type: "enum" },
+      { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  chat_threads: {
+    key: "chat_threads",
+    title: "Chat Threads",
+    description: "Inspect app chat threads between users and partners.",
+    sectionKey: "chats",
+    columns: [
+      { key: "target_type", label: "Target Type" },
+      { key: "target_id", label: "Target ID" },
+      { key: "target_name", label: "Target Name" },
+      { key: "target_phone", label: "Phone" },
+      { key: "last_message", label: "Last Message" },
+    ],
+  },
+  chat_messages: {
+    key: "chat_messages",
+    title: "Chat Messages",
+    description: "Moderate individual messages from in-app chats.",
+    sectionKey: "chats",
+    columns: [
+      { key: "thread_id", label: "Thread ID" },
+      { key: "sender_type", label: "Sender", options: ["user", "partner", "admin"], type: "enum" },
+      { key: "message", label: "Message" },
     ],
   },
   settings: {

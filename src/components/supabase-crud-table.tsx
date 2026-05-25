@@ -52,6 +52,8 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   const [saving, setSaving] = useState(false);
   const [editingRows, setEditingRows] = useState<Record<string, EditableRow>>({});
   const [newRow, setNewRow] = useState<EditableRow>(() => createBlankRow(config));
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "active">("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -192,14 +194,65 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     return payload;
   }
 
+  const visibleRows = rows.filter((row) => {
+    const matchesQuery =
+      query.trim() === "" ||
+      JSON.stringify(row).toLowerCase().includes(query.trim().toLowerCase());
+    if (!matchesQuery) return false;
+    if (statusFilter === "pending" && config.approveField) {
+      return row[config.approveField] === false;
+    }
+    if (statusFilter === "approved" && config.approveField) {
+      return row[config.approveField] === true;
+    }
+    if (statusFilter === "active" && config.activeField) {
+      return row[config.activeField] === true;
+    }
+    return true;
+  });
+
+  const pendingCount = config.approveField
+    ? rows.filter((row) => row[config.approveField!] === false).length
+    : 0;
+  const approvedCount = config.approveField
+    ? rows.filter((row) => row[config.approveField!] === true).length
+    : 0;
+  const activeCount = config.activeField
+    ? rows.filter((row) => row[config.activeField!] === true).length
+    : rows.length;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{config.title}</h1>
-          <p className="mt-1 text-slate-600">{config.description}</p>
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{config.title}</h1>
+            <p className="mt-1 text-slate-600">{config.description}</p>
+          </div>
+          <SendNotificationButton section={config.sectionKey} />
         </div>
-        <SendNotificationButton section={config.sectionKey} />
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total</p>
+            <p className="mt-1 text-2xl font-bold text-slate-950">{rows.length}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {config.approveField ? "Pending" : "Active"}
+            </p>
+            <p className="mt-1 text-2xl font-bold text-amber-700">
+              {config.approveField ? pendingCount : activeCount}
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {config.approveField ? "Approved" : "Showing"}
+            </p>
+            <p className="mt-1 text-2xl font-bold text-emerald-700">
+              {config.approveField ? approvedCount : visibleRows.length}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -331,6 +384,34 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
         <p className="text-slate-500">Loading from Supabase…</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search ${config.title.toLowerCase()}`}
+              className="min-w-64 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+            />
+            <div className="flex flex-wrap gap-2">
+              {(["all", "pending", "approved", "active"] as const).map((filter) => {
+                if ((filter === "pending" || filter === "approved") && !config.approveField) return null;
+                if (filter === "active" && !config.activeField) return null;
+                return (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setStatusFilter(filter)}
+                    className={`rounded-lg px-3 py-2 text-xs font-semibold capitalize ${
+                      statusFilter === filter
+                        ? "bg-teal-700 text-white"
+                        : "border border-slate-200 bg-white text-slate-700"
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <table className="min-w-full text-left text-sm">
             <thead className="border-b bg-slate-50 text-slate-600">
               <tr>
@@ -347,7 +428,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {visibleRows.map((row) => {
                 const id = String(row.id);
                 const editable = editingRows[id] ?? createEditableRow(config, row);
                 return (

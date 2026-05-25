@@ -21,9 +21,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="flex min-h-full bg-slate-50 text-slate-900 antialiased">
+      <body className="flex min-h-full bg-slate-100 text-slate-900 antialiased">
         <AdminSidebar />
-        <main className="flex-1 overflow-auto p-6 md:p-8">
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          <div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm lg:hidden">
+            <p className="font-semibold text-slate-950">Manasa Upay Admin</p>
+            <p className="text-sm text-slate-500">Use desktop width for full navigation.</p>
+          </div>
           <div className="mx-auto w-full max-w-7xl">
             {children}
           </div>
