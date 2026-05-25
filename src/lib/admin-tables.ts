@@ -31,6 +31,13 @@ export type AdminColumnType =
   | "boolean"
   | "image";
 
+export type AdminOptionSource =
+  | "categoryLabels"
+  | "categoryKeys"
+  | "businesses"
+  | "users"
+  | "chatThreads";
+
 export type AdminTableConfig = {
   key: AdminTableKey;
   title: string;
@@ -44,6 +51,7 @@ export type AdminTableConfig = {
     key: string;
     label: string;
     options?: string[];
+    optionSource?: AdminOptionSource;
     type?: AdminColumnType;
   }[];
 };
@@ -103,8 +111,9 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category" },
-      { key: "subcategory", label: "Subcategory" },
+      { key: "owner_id", label: "Owner", optionSource: "users" },
+      { key: "category", label: "Category", optionSource: "categoryLabels" },
+      { key: "subcategory", label: "Subcategory", optionSource: "categoryLabels" },
       { key: "phone", label: "Phone" },
       { key: "cover_image", label: "Cover Image", type: "image" },
       { key: "logo_url", label: "Logo", type: "image" },
@@ -123,8 +132,9 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "name", label: "Name" },
-      { key: "category", label: "Category" },
-      { key: "subcategory", label: "Subcategory" },
+      { key: "provider_id", label: "Provider", optionSource: "users" },
+      { key: "category", label: "Category", optionSource: "categoryLabels" },
+      { key: "subcategory", label: "Subcategory", optionSource: "categoryLabels" },
       { key: "contact", label: "Contact" },
       { key: "area", label: "Area" },
       { key: "is_verified", label: "Verified", type: "boolean" },
@@ -141,6 +151,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     availabilityField: "availability",
     columns: [
       { key: "name", label: "Name" },
+      { key: "user_id", label: "User", optionSource: "users" },
       { key: "phone", label: "Phone" },
       { key: "vehicle_number", label: "Vehicle" },
       { key: "area", label: "Area" },
@@ -157,6 +168,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "title", label: "Title" },
+      { key: "business_id", label: "Business", optionSource: "businesses" },
       { key: "salary", label: "Salary" },
       { key: "location", label: "Location" },
       { key: "contact", label: "Contact" },
@@ -175,7 +187,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "key", label: "Key" },
       { key: "label", label: "Label" },
       { key: "scope", label: "Scope", options: categoryScopes, type: "enum" },
-      { key: "parent_key", label: "Parent Key" },
+      { key: "parent_key", label: "Parent Key", optionSource: "categoryKeys" },
       { key: "icon_url", label: "Icon", type: "image" },
       { key: "banner_url", label: "Banner", type: "image" },
       { key: "color", label: "Color" },
@@ -195,8 +207,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "title", label: "Title" },
       { key: "image_url", label: "Image", type: "image" },
       { key: "redirect_link", label: "Link" },
-      { key: "category_key", label: "Category Target" },
-      { key: "subcategory_key", label: "Subcategory Target" },
+      { key: "category_key", label: "Category Target", optionSource: "categoryKeys" },
+      { key: "subcategory_key", label: "Subcategory Target", optionSource: "categoryKeys" },
       { key: "priority", label: "Priority" },
       { key: "start_date", label: "Start", type: "date" },
       { key: "expiry_date", label: "End", type: "date" },
@@ -216,7 +228,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "redirect_link", label: "Link" },
       { key: "trigger_type", label: "Trigger", options: ["app_open", "timed", "category", "campaign"], type: "enum" },
       { key: "frequency", label: "Frequency" },
-      { key: "category_key", label: "Category Target" },
+      { key: "category_key", label: "Category Target", optionSource: "categoryKeys" },
       { key: "priority", label: "Priority" },
       { key: "start_at", label: "Start", type: "date" },
       { key: "end_at", label: "End", type: "date" },
@@ -229,9 +241,9 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "sponsored_shops",
     activeField: "active",
     columns: [
-      { key: "business_id", label: "Business ID" },
+      { key: "business_id", label: "Business", optionSource: "businesses" },
       { key: "placement", label: "Placement", options: ["homepage", "category", "search", "offers", "carousel"], type: "enum" },
-      { key: "category_key", label: "Category Target" },
+      { key: "category_key", label: "Category Target", optionSource: "categoryKeys" },
       { key: "priority", label: "Priority" },
       { key: "start_date", label: "Start", type: "date" },
       { key: "end_date", label: "End", type: "date" },
@@ -260,7 +272,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "title", label: "Title" },
-      { key: "category", label: "Category" },
+      { key: "category", label: "Category", optionSource: "categoryLabels" },
       { key: "content", label: "Content" },
       { key: "image", label: "Image", type: "image" },
       { key: "scheduled_at", label: "Schedule", type: "date" },
@@ -276,7 +288,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "title", label: "Title" },
-      { key: "category", label: "Category" },
+      { key: "category", label: "Category", optionSource: "categoryLabels" },
       { key: "summary", label: "Summary" },
       { key: "image_url", label: "Image", type: "image" },
       { key: "published_at", label: "Publish Date", type: "date" },
@@ -309,7 +321,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     activeField: "active",
     featuredField: "is_featured",
     columns: [
-      { key: "business_id", label: "Business ID" },
+      { key: "business_id", label: "Business", optionSource: "businesses" },
       { key: "title", label: "Title" },
       { key: "discount_text", label: "Discount" },
       { key: "banner_url", label: "Banner", type: "image" },
@@ -328,6 +340,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "title", label: "Title" },
+      { key: "user_id", label: "User", optionSource: "users" },
       { key: "property_type", label: "Type", options: ["residential", "commercial", "plot", "rental"], type: "enum" },
       { key: "price", label: "Price" },
       { key: "location", label: "Location" },
@@ -346,7 +359,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     featuredField: "is_featured",
     columns: [
       { key: "title", label: "Title" },
-      { key: "category", label: "Category" },
+      { key: "user_id", label: "User", optionSource: "users" },
+      { key: "category", label: "Category", optionSource: "categoryLabels" },
       { key: "price", label: "Price" },
       { key: "location", label: "Location" },
       { key: "contact", label: "Contact" },
@@ -379,7 +393,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     sectionKey: "follows",
     activeField: "active",
     columns: [
-      { key: "user_id", label: "User ID" },
+      { key: "user_id", label: "User", optionSource: "users" },
       { key: "target_type", label: "Target", options: ["business", "service", "creator", "category", "property"], type: "enum" },
       { key: "target_id", label: "Target ID" },
       { key: "notification_preferences", label: "Notification Preferences (JSON)", type: "json" },
@@ -394,7 +408,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "event_name", label: "Event" },
       { key: "entity_type", label: "Entity Type" },
       { key: "entity_id", label: "Entity ID" },
-      { key: "user_id", label: "User ID" },
+      { key: "user_id", label: "User", optionSource: "users" },
       { key: "metadata", label: "Metadata (JSON)", type: "json" },
     ],
   },
@@ -431,7 +445,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     description: "Moderate individual messages from in-app chats.",
     sectionKey: "chats",
     columns: [
-      { key: "thread_id", label: "Thread ID" },
+      { key: "thread_id", label: "Thread", optionSource: "chatThreads" },
       { key: "sender_type", label: "Sender", options: ["user", "partner", "admin"], type: "enum" },
       { key: "message", label: "Message" },
     ],

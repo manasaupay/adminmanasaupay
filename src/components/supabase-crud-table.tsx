@@ -6,19 +6,8 @@ import { SendNotificationButton } from "./send-notification-button";
 
 type Row = Record<string, unknown>;
 type EditableRow = Record<string, string | boolean>;
-
-function createBlankRow(config: AdminTableConfig): EditableRow {
-  const row: EditableRow = {};
-  config.columns.forEach((column) => {
-    if (column.type === "boolean") row[column.key] = false;
-    else row[column.key] = "";
-  });
-  if (config.approveField) row[config.approveField] = false;
-  if (config.featuredField) row[config.featuredField] = false;
-  if (config.activeField) row[config.activeField] = false;
-  if (config.availabilityField) row[config.availabilityField] = false;
-  return row;
-}
+type Option = { value: string; label: string };
+type OptionMap = Record<string, Option[]>;
 
 function createEditableRow(config: AdminTableConfig, row: Row): EditableRow {
   const editable: EditableRow = {};
@@ -51,9 +40,9 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingRows, setEditingRows] = useState<Record<string, EditableRow>>({});
-  const [newRow, setNewRow] = useState<EditableRow>(() => createBlankRow(config));
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "active">("all");
+  const [dynamicOptions, setDynamicOptions] = useState<OptionMap>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,6 +73,15 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    fetch("/api/admin/options")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) setDynamicOptions(data);
+      })
+      .catch(() => setDynamicOptions({}));
+  }, []);
 
   async function patch(id: string, updates: Record<string, unknown>) {
     setSaving(true);
@@ -124,27 +122,6 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     }
   }
 
-  async function create(values: EditableRow) {
-    setSaving(true);
-    setError(null);
-    try {
-      const payload = preparePayload(values);
-      const res = await fetch(`/api/admin/${config.key}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to create row");
-      setNewRow(createBlankRow(config));
-      load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function updateRowValue(id: string, key: string, value: string | boolean) {
     setEditingRows((current) => ({
       ...current,
@@ -155,15 +132,13 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     }));
   }
 
-  function updateNewRowValue(key: string, value: string | boolean) {
-    setNewRow((current) => ({
-      ...current,
-      [key]: value,
-    }));
-  }
-
   function formatValue(value: unknown) {
     return value === null || value === undefined ? "" : String(value);
+  }
+
+  function optionsFor(column: AdminTableConfig["columns"][number]) {
+    if (column.optionSource) return dynamicOptions[column.optionSource] ?? [];
+    return column.options?.map((option) => ({ value: option, label: option })) ?? [];
   }
 
   function preparePayload(values: EditableRow): Record<string, unknown> {
@@ -255,121 +230,6 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">Add new row</h2>
-            <p className="text-sm text-slate-500">Fill fields and click Add.</p>
-          </div>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => create(newRow)}
-            className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Add row
-          </button>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {config.columns.map((column) => (
-            <label key={column.key} className="block text-sm text-slate-700">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {column.label}
-              </span>
-              {column.type === "enum" && column.options ? (
-                <select
-                  value={String(newRow[column.key] ?? "")}
-                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                >
-                  <option value="">— select —</option>
-                  {column.options.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              ) : column.type === "boolean" ? (
-                <input
-                  type="checkbox"
-                  checked={Boolean(newRow[column.key])}
-                  onChange={(e) => updateNewRowValue(column.key, e.target.checked)}
-                  className="mt-1"
-                />
-              ) : column.type === "date" ? (
-                <input
-                  type="date"
-                  value={String(newRow[column.key] ?? "")}
-                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                />
-              ) : column.type === "json" ? (
-                <textarea
-                  value={String(newRow[column.key] ?? "")}
-                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                />
-              ) : column.type === "image" ? (
-                <input
-                  type="text"
-                  placeholder="Image URL"
-                  value={String(newRow[column.key] ?? "")}
-                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={String(newRow[column.key] ?? "")}
-                  onChange={(e) => updateNewRowValue(column.key, e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                />
-              )}
-            </label>
-          ))}
-          {config.approveField && (
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={Boolean(newRow[config.approveField])}
-                onChange={(e) => updateNewRowValue(config.approveField!, e.target.checked)}
-              />
-              Approve row
-            </label>
-          )}
-          {config.featuredField && (
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={Boolean(newRow[config.featuredField])}
-                onChange={(e) => updateNewRowValue(config.featuredField!, e.target.checked)}
-              />
-              Featured
-            </label>
-          )}
-          {config.activeField && (
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={Boolean(newRow[config.activeField])}
-                onChange={(e) => updateNewRowValue(config.activeField!, e.target.checked)}
-              />
-              Active
-            </label>
-          )}
-          {config.availabilityField && (
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={Boolean(newRow[config.availabilityField])}
-                onChange={(e) => updateNewRowValue(config.availabilityField!, e.target.checked)}
-              />
-              Available
-            </label>
-          )}
-        </div>
-      </div>
-
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           <p className="font-medium">Supabase error</p>
@@ -435,16 +295,16 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                   <tr key={id} className="border-b last:border-0">
                     {config.columns.map((c) => (
                       <td key={c.key} className="max-w-xs truncate px-4 py-3">
-                            {c.type === "enum" && c.options ? (
+                            {(c.type === "enum" && c.options) || c.optionSource ? (
                               <select
                                 value={String(editable[c.key] ?? "")}
                                 onChange={(e) => updateRowValue(id, c.key, e.target.value)}
                                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                               >
                                 <option value="">— select —</option>
-                                {c.options.map((opt) => (
-                                  <option key={opt} value={opt}>
-                                    {opt}
+                                {optionsFor(c).map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label}
                                   </option>
                                 ))}
                               </select>
@@ -566,7 +426,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
           </table>
           {rows.length === 0 && !error && (
             <p className="p-6 text-center text-slate-500">
-              No records yet. Add rows in Supabase Table Editor.
+              No records yet. Use Add New to create the first item.
             </p>
           )}
         </div>

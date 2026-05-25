@@ -5,6 +5,7 @@ export const SUPPORT_EMAIL = "manasaupay@gmail.com";
 
 export const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
+  { href: "/add-new", label: "Add New" },
   { href: "/users", label: "Users" },
   { href: "/businesses", label: "Businesses" },
   { href: "/services", label: "Services" },
@@ -30,6 +31,10 @@ export const NAV_ITEMS = [
 ] as const;
 
 export const NAV_GROUPS = [
+  {
+    title: "Create",
+    items: [{ href: "/add-new", label: "Add New" }],
+  },
   {
     title: "Content",
     items: [
