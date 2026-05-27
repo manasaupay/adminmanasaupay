@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       notification,
       sent: 0,
       failed: 0,
-      message: "Notification successfully saved in Supabase database. However, active push dispatch (FCM) was skipped: Firebase Service Account JSON is not configured in admin/.env.local.",
+      message: "Notification successfully saved in Supabase database. However, active push dispatch (FCM) was skipped: Firebase Service Account JSON is not configured in your admin/.env.local or Vercel Environment Variables.",
     });
   }
 
