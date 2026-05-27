@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 const roles = [
   { value: "business", label: "Business Partner" },
@@ -301,24 +302,34 @@ export function PartnerUserCard() {
 
                   <div className="space-y-1.5 col-span-1">
                     <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">Service Category *</label>
-                    <select
-                      value={form.newTargetCategory}
-                      onChange={(e) => setForm({ ...form, newTargetCategory: e.target.value, newTargetSubcategory: "" })}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white focus:border-teal-500/40 outline-none cursor-pointer"
-                      required
-                    >
-                      <option value="">-- Choose Category --</option>
-                      {assignment.categories.map((cat: any) => (
-                        <option key={cat.value} value={cat.value} className="bg-slate-950 text-white">
-                          {cat.label}
-                        </option>
-                      ))}
-                    </select>
+                    {assignment.categories.length === 0 ? (
+                      <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-[10px] text-red-400 leading-normal font-bold">
+                        ⚠️ No categories found for <strong className="text-white">"{form.role === 'service_provider' ? 'services' : 'businesses'}"</strong>.
+                        <br />
+                        <Link href="/add-new" className="text-teal-400 font-bold underline hover:text-teal-300 inline-block mt-1">
+                          Create Category first &rarr;
+                        </Link>
+                      </div>
+                    ) : (
+                      <select
+                        value={form.newTargetCategory}
+                        onChange={(e) => setForm({ ...form, newTargetCategory: e.target.value, newTargetSubcategory: "" })}
+                        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white focus:border-teal-500/40 outline-none cursor-pointer"
+                        required
+                      >
+                        <option value="">-- Choose Category --</option>
+                        {assignment.categories.map((cat: any) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {/* Cascading Subcategory Dropdown list to avoid human typing mistakes! */}
                   <div className="space-y-1.5 col-span-1">
-                    <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">Subcategory *</label>
+                    <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">Subcategory</label>
                     <select
                       value={form.newTargetSubcategory}
                       onChange={(e) => setForm({ ...form, newTargetSubcategory: e.target.value })}
