@@ -65,6 +65,17 @@ export function PartnerUserCard() {
     return null;
   }, [form.role, options]);
 
+  // Compute subcategories cascading selection in real-time
+  const subcategories = useMemo(() => {
+    if (!form.newTargetCategory) return [];
+    return ((options as any).allCategories ?? [])
+      .filter((cat: any) => cat.parent_key === form.newTargetCategory)
+      .map((cat: any) => ({
+        value: cat.key,
+        label: cat.label ?? cat.key,
+      }));
+  }, [form.newTargetCategory, options]);
+
   async function createPartner() {
     if (assignment && !form.assignedTargetId) {
       setError(`Select or Create a ${assignment.label} before creating login.`);
@@ -85,10 +96,24 @@ export function PartnerUserCard() {
     setMessage(null);
     setError(null);
     try {
+      // Resolve category and subcategory keys to their corresponding labels
+      const parentCat = ((options as any).allCategories ?? []).find(
+        (c: any) => c.key === form.newTargetCategory
+      );
+      const subCat = ((options as any).allCategories ?? []).find(
+        (c: any) => c.key === form.newTargetSubcategory
+      );
+
+      const payload = {
+        ...form,
+        newTargetCategory: parentCat ? parentCat.label : form.newTargetCategory,
+        newTargetSubcategory: subCat ? subCat.label : form.newTargetSubcategory,
+      };
+
       const res = await fetch("/api/partners", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not create partner");
@@ -278,8 +303,8 @@ export function PartnerUserCard() {
                     <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">Service Category *</label>
                     <select
                       value={form.newTargetCategory}
-                      onChange={(e) => setForm({ ...form, newTargetCategory: e.target.value })}
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white focus:border-teal-500/40 outline-none"
+                      onChange={(e) => setForm({ ...form, newTargetCategory: e.target.value, newTargetSubcategory: "" })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white focus:border-teal-500/40 outline-none cursor-pointer"
                       required
                     >
                       <option value="">-- Choose Category --</option>
@@ -291,14 +316,22 @@ export function PartnerUserCard() {
                     </select>
                   </div>
 
+                  {/* Cascading Subcategory Dropdown list to avoid human typing mistakes! */}
                   <div className="space-y-1.5 col-span-1">
-                    <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">Subcategory</label>
-                    <input
+                    <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">Subcategory *</label>
+                    <select
                       value={form.newTargetSubcategory}
                       onChange={(e) => setForm({ ...form, newTargetSubcategory: e.target.value })}
-                      placeholder="e.g. AC, Electrical, Plumbing"
-                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white placeholder-slate-600 focus:border-teal-500/40 outline-none"
-                    />
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white focus:border-teal-500/40 outline-none cursor-pointer"
+                      disabled={!form.newTargetCategory}
+                    >
+                      <option value="">-- Select Subcategory (optional) --</option>
+                      {subcategories.map((sub: any) => (
+                        <option key={sub.value} value={sub.value} className="bg-slate-950 text-white">
+                          {sub.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}

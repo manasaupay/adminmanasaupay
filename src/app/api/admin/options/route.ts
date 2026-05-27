@@ -89,6 +89,12 @@ export async function GET() {
           label: row.label ?? row.key,
         })),
     ),
+    allCategories: categoryRows.map((row) => ({
+      key: row.key,
+      label: row.label ?? row.key,
+      parent_key: row.parent_key ?? null,
+      scope: row.scope ?? null,
+    })),
     businesses: businessRows.map((row) => ({
       value: row.id,
       label: `${row.name ?? "Business"}${row.category ? ` · ${row.category}` : ""}`,
