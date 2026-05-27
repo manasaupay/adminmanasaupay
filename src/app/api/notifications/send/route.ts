@@ -36,10 +36,6 @@ export async function POST(req: NextRequest) {
   if (supabaseError) {
     return NextResponse.json({ error: supabaseError }, { status: 503 });
   }
-  const firebaseError = getFirebaseConfigError();
-  if (firebaseError) {
-    return NextResponse.json({ error: firebaseError }, { status: 503 });
-  }
 
   const payload = (await req.json()) as SendNotificationPayload;
   const title = payload.title?.trim();
@@ -69,6 +65,16 @@ export async function POST(req: NextRequest) {
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
+
+  const firebaseError = getFirebaseConfigError();
+  if (firebaseError) {
+    return NextResponse.json({
+      notification,
+      sent: 0,
+      failed: 0,
+      message: "Notification successfully saved in Supabase database. However, active push dispatch (FCM) was skipped: Firebase Service Account JSON is not configured in admin/.env.local.",
+    });
   }
 
   const { data: tokens, error: tokenError } = await buildTokenQuery(
