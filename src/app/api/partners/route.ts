@@ -113,7 +113,22 @@ export async function POST(req: NextRequest) {
   let finalTargetId = isCreateNew ? null : (assignment ? assignedTargetId : null);
 
   try {
-    // 2. If 'create_new', create the new profile
+    // 2. Create the user public profile FIRST to satisfy the foreign key constraint on child tables
+    const { error: profileError } = await supabase.from("users").upsert({
+      id: authData.user.id,
+      email,
+      name,
+      phone,
+      role,
+      is_verified: true,
+      meta: {
+        assigned_target_type: assignment?.appType,
+      },
+    });
+
+    if (profileError) throw new Error(`Could not create public user record: ${profileError.message}`);
+
+    // 3. Create the new dynamic profile (now that the user record exists!)
     if (assignment && isCreateNew) {
       if (role === "business") {
         const { data: newTarget, error: createError } = await supabase
@@ -165,23 +180,24 @@ export async function POST(req: NextRequest) {
         if (createError) throw new Error(`Could not create auto driver profile: ${createError.message}`);
         finalTargetId = newTarget.id;
       }
+
+      // Update the public user profile's meta to link the created profile ID
+      if (finalTargetId) {
+        const { error: updateProfileError } = await supabase
+          .from("users")
+          .update({
+            meta: {
+              assigned_target_type: assignment.appType,
+              assigned_target_id: finalTargetId,
+            },
+          })
+          .eq("id", authData.user.id);
+        
+        if (updateProfileError) {
+          throw new Error(`Could not link final target ID to public user profile: ${updateProfileError.message}`);
+        }
+      }
     }
-
-    // 3. Create the user public profile
-    const { error: profileError } = await supabase.from("users").upsert({
-      id: authData.user.id,
-      email,
-      name,
-      phone,
-      role,
-      is_verified: true,
-      meta: {
-        assigned_target_type: assignment?.appType,
-        assigned_target_id: finalTargetId || undefined,
-      },
-    });
-
-    if (profileError) throw new Error(`Could not create public user record: ${profileError.message}`);
 
     // 4. Update the existing profile if assigning to an already existing profile
     if (assignment && !isCreateNew) {
@@ -191,6 +207,21 @@ export async function POST(req: NextRequest) {
         .eq("id", assignedTargetId);
 
       if (assignError) throw new Error(`Could not update target profile: ${assignError.message}`);
+
+      // Update public user profile's meta with the existing linked profile ID
+      const { error: updateProfileError } = await supabase
+        .from("users")
+        .update({
+          meta: {
+            assigned_target_type: assignment.appType,
+            assigned_target_id: assignedTargetId,
+          },
+        })
+        .eq("id", authData.user.id);
+      
+      if (updateProfileError) {
+        throw new Error(`Could not link target ID to public user profile: ${updateProfileError.message}`);
+      }
     }
 
     // 5. Update Auth app_metadata if we dynamically created the profile
@@ -208,7 +239,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (e: any) {
-    // Rollback
+    // Rollback operations in case of failures
     if (assignment && isCreateNew && finalTargetId) {
       await supabase.from(assignment.table).delete().eq("id", finalTargetId);
     }
