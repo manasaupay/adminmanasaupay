@@ -8,27 +8,27 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-900 bg-[#070b13] shadow-2xl lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm lg:flex">
       {/* Brand Header */}
-      <div className="border-b border-slate-900 px-6 py-6 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center border border-teal-500/30 glow-active">
-          <svg className="h-5 w-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="border-b border-slate-100 px-6 py-6 flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-200 glow-active">
+          <svg className="h-5 w-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
         <div>
-          <p className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-            Manasa <span className="text-teal-400 font-medium text-xs bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">Upay</span>
+          <p className="text-lg font-black tracking-tight text-slate-900 flex items-center gap-1.5">
+            Manasa <span className="text-teal-700 font-semibold text-xs bg-teal-50 px-2 py-0.5 rounded border border-teal-100">Ops</span>
           </p>
-          <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-0.5">Operations Suite</p>
+          <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mt-0.5">Hyperlocal Console</p>
         </div>
       </div>
 
       {/* Navigation list */}
       <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-6 scrollbar-thin">
         {NAV_GROUPS.map((group) => (
-          <div key={group.title} className="space-y-2">
-            <div className="px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500/90">
+          <div key={group.title} className="space-y-1.5">
+            <div className="px-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
               {group.title}
             </div>
             <div className="space-y-1">
@@ -40,16 +40,16 @@ export function AdminSidebar() {
                     href={item.href}
                     className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 ${
                       active
-                        ? "bg-teal-500/10 text-teal-400 border border-teal-500/20 shadow-md shadow-teal-500/5"
-                        : "text-slate-400 border border-transparent hover:bg-slate-900/60 hover:text-slate-200"
+                        ? "bg-teal-50 text-teal-700 border border-teal-100/60 shadow-sm"
+                        : "text-slate-600 border border-transparent hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
-                    <span className={`transition-transform duration-200 group-hover:scale-110 ${active ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                    <span className={`transition-transform duration-200 group-hover:scale-110 ${active ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
                       {getIcon(item.href)}
                     </span>
                     <span className="flex-1">{item.label}</span>
                     {active && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal-400 shadow-[0_0_8px_#2dd4bf]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.4)]" />
                     )}
                   </Link>
                 );
@@ -60,10 +60,10 @@ export function AdminSidebar() {
       </nav>
 
       {/* Operations Info Card */}
-      <div className="p-4 border-t border-slate-900 bg-slate-950/40">
-        <div className="rounded-xl border border-slate-800/80 bg-slate-900/30 p-3.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-            <svg className="h-4 w-4 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="p-4 border-t border-slate-100 bg-slate-50/40">
+        <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <svg className="h-4 w-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <span>Live Security</span>

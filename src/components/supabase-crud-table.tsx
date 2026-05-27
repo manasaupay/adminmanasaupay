@@ -198,11 +198,11 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   return (
     <div className="space-y-6">
       {/* Title block */}
-      <div className="glass-card rounded-3xl border border-slate-800 bg-slate-900/30 p-6 shadow-2xl">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-900 pb-5">
+      <div className="glass-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-white">{config.title}</h1>
-            <p className="text-xs text-slate-400 mt-1">{config.description}</p>
+            <h1 className="text-xl font-black tracking-tight text-slate-900">{config.title}</h1>
+            <p className="text-xs text-slate-500 mt-1 font-medium">{config.description}</p>
           </div>
           <div className="shrink-0">
             <SendNotificationButton section={config.sectionKey} />
@@ -211,23 +211,23 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
 
         {/* Local metrics sub-block */}
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-4">
-            <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">Total Entries</p>
-            <p className="mt-1 text-2xl font-black text-white">{rows.length}</p>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">Total Entries</p>
+            <p className="mt-1 text-2xl font-black text-slate-900">{rows.length}</p>
           </div>
-          <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-4">
-            <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">
               {config.approveField ? "Pending Approval" : "Active In-app"}
             </p>
-            <p className="mt-1 text-2xl font-black text-amber-400">
+            <p className="mt-1 text-2xl font-black text-amber-600">
               {config.approveField ? pendingCount : activeCount}
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-4">
-            <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">
               {config.approveField ? "Approved" : "Showing Filtered"}
             </p>
-            <p className="mt-1 text-2xl font-black text-emerald-400">
+            <p className="mt-1 text-2xl font-black text-emerald-600">
               {config.approveField ? approvedCount : visibleRows.length}
             </p>
           </div>
@@ -235,15 +235,15 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs font-bold text-red-400">
-          <p className="font-extrabold text-white flex items-center gap-1.5">
-            <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700 shadow-sm">
+          <p className="font-extrabold flex items-center gap-1.5">
+            <svg className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             Supabase Connection Issue
           </p>
           <p className="mt-1.5 leading-relaxed">{error}</p>
-          <p className="mt-2 text-[10px] text-slate-500 font-bold">
+          <p className="mt-2 text-[10px] text-slate-400 font-bold">
             Verify credentials in .env.local: SUPABASE_SERVICE_ROLE_KEY & tables migrations.
           </p>
         </div>
@@ -251,19 +251,19 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
 
       {loading ? (
         <div className="flex items-center gap-2 p-6 justify-center">
-          <span className="h-2.5 w-2.5 rounded-full bg-teal-400 glow-active" />
-          <p className="text-xs font-bold text-slate-400 tracking-wide">Syncing entries with Supabase...</p>
+          <span className="h-2.5 w-2.5 rounded-full bg-teal-500 glow-active shadow-[0_0_8px_rgba(20,184,166,0.3)]" />
+          <p className="text-xs font-bold text-slate-500 tracking-wide">Syncing entries with Supabase...</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-3xl border border-slate-900 bg-[#070b13] shadow-2xl backdrop-blur-md">
+        <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
           {/* Table Header Filter controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 p-5">
             <div className="flex-1 relative">
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`Search ${config.title.toLowerCase()}...`}
-                className="w-full sm:max-w-xs rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white placeholder-slate-600 focus:border-teal-500/40 focus:ring-1 focus:ring-teal-500/20 outline-none transition-all"
+                className="w-full sm:max-w-xs rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 focus:ring-1 focus:ring-teal-500/20 outline-none transition-all"
               />
             </div>
             
@@ -279,8 +279,8 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                     onClick={() => setStatusFilter(filter)}
                     className={`rounded-lg px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                       active
-                        ? "bg-teal-500 text-slate-950 shadow-md shadow-teal-500/5"
-                        : "border border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
+                        ? "bg-teal-600 text-white shadow-sm"
+                        : "border border-slate-200 bg-slate-50 text-slate-500 hover:text-slate-900"
                     }`}
                   >
                     {filter}
@@ -291,7 +291,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
           </div>
 
           <table className="min-w-full text-left text-xs border-collapse">
-            <thead className="border-b border-slate-900 bg-slate-950/40 text-slate-400">
+            <thead className="border-b border-slate-100 bg-slate-50/50 text-slate-500">
               <tr>
                 {config.columns.map((c) => (
                   <th key={c.key} className="px-5 py-4 font-black uppercase tracking-wider text-[10px]">
@@ -310,18 +310,18 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                 const id = String(row.id);
                 const editable = editingRows[id] ?? createEditableRow(config, row);
                 return (
-                  <tr key={id} className="border-b border-slate-900 last:border-0 hover:bg-slate-900/10 transition-colors">
+                  <tr key={id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/20 transition-colors">
                     {config.columns.map((c) => (
                       <td key={c.key} className="max-w-xs truncate px-5 py-3">
                         {(c.type === "enum" && c.options) || c.optionSource ? (
                           <select
                             value={String(editable[c.key] ?? "")}
                             onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-teal-500/40"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-teal-500/40 cursor-pointer"
                           >
-                            <option value="" className="text-slate-500">— select —</option>
+                            <option value="" className="text-slate-400">— select —</option>
                             {optionsFor(c).map((opt) => (
-                              <option key={opt.value} value={opt.value} className="bg-slate-950 text-white">
+                              <option key={opt.value} value={opt.value} className="bg-white text-slate-800">
                                 {opt.label}
                               </option>
                             ))}
@@ -332,7 +332,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               type="checkbox"
                               checked={Boolean(editable[c.key])}
                               onChange={(e) => updateRowValue(id, c.key, e.target.checked)}
-                              className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                              className="h-4 w-4 rounded border-slate-200 bg-white text-teal-600 focus:ring-0 cursor-pointer"
                             />
                           </div>
                         ) : c.type === "date" ? (
@@ -340,13 +340,13 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                             type="date"
                             value={String(editable[c.key] ?? "")}
                             onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-800 outline-none focus:border-teal-500/40"
                           />
                         ) : c.type === "json" ? (
                           <textarea
                             value={String(editable[c.key] ?? "")}
                             onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-800 outline-none focus:border-teal-500/40"
                             rows={1}
                           />
                         ) : c.type === "image" ? (
@@ -355,14 +355,14 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                             placeholder="Image URL"
                             value={String(editable[c.key] ?? "")}
                             onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40 placeholder-slate-700"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-800 outline-none focus:border-teal-500/40 placeholder-slate-400"
                           />
                         ) : (
                           <input
                             type="text"
                             value={formatValue(editable[c.key])}
                             onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40 placeholder-slate-700"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-800 outline-none focus:border-teal-500/40 placeholder-slate-400"
                           />
                         )}
                       </td>
@@ -375,7 +375,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                           type="button"
                           disabled={saving}
                           onClick={() => patch(id, editable)}
-                          className="rounded-lg bg-teal-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-teal-400 border border-teal-500/20 hover:bg-teal-500/20 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
+                          className="rounded-lg bg-teal-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-teal-700 border border-teal-200 hover:bg-teal-100 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
                         >
                           Save
                         </button>
@@ -385,7 +385,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                           onClick={() => {
                             if (confirm("Permanently delete this entry?")) remove(id);
                           }}
-                          className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-red-400 hover:bg-red-500/20 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
+                          className="rounded-lg border border-red-200 bg-red-50/50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-red-600 hover:bg-red-100 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
                         >
                           Delete
                         </button>
@@ -403,7 +403,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.approveField!]: e.target.checked,
                             })
                           }
-                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                          className="h-4 w-4 rounded border-slate-200 bg-white text-teal-600 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
@@ -417,7 +417,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.featuredField!]: e.target.checked,
                             })
                           }
-                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                          className="h-4 w-4 rounded border-slate-200 bg-white text-teal-600 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
@@ -431,7 +431,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.activeField!]: e.target.checked,
                             })
                           }
-                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                          className="h-4 w-4 rounded border-slate-200 bg-white text-teal-600 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
@@ -445,7 +445,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.availabilityField!]: e.target.checked,
                             })
                           }
-                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                          className="h-4 w-4 rounded border-slate-200 bg-white text-teal-600 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
@@ -455,7 +455,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
             </tbody>
           </table>
           {rows.length === 0 && !error && (
-            <p className="p-12 text-center text-xs font-bold text-slate-500">
+            <p className="p-12 text-center text-xs font-bold text-slate-400">
               No entries found. Click "Add New" or use User Setup wizards to inject records.
             </p>
           )}

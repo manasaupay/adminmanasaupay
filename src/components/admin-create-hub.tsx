@@ -120,9 +120,9 @@ export function AdminCreateHub() {
   return (
     <div className="space-y-6">
       {/* Title box */}
-      <section className="glass-card rounded-3xl border border-slate-800 bg-slate-900/30 p-6 shadow-2xl">
-        <h1 className="text-2xl font-black text-white">Console Dynamic Creator</h1>
-        <p className="mt-1.5 text-xs text-slate-400 font-medium">
+      <section className="glass-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-black text-slate-900">Console Dynamic Creator</h1>
+        <p className="mt-1.5 text-xs text-slate-500 font-medium">
           Create new categories, subcategories, directory profiles, campaigns, and settings from a single premium control hub.
         </p>
       </section>
@@ -131,10 +131,10 @@ export function AdminCreateHub() {
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         
         {/* Selector Sidebar */}
-        <aside className="glass-card rounded-3xl border border-slate-800 bg-slate-900/30 p-4 shadow-xl h-fit">
+        <aside className="glass-card rounded-3xl border border-slate-200 bg-white p-4 shadow-sm h-fit">
           {createGroups.map((group) => (
             <div key={group.title} className="mb-5 last:mb-0">
-              <p className="px-3 pb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">
+              <p className="px-3.5 pb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">
                 {group.title}
               </p>
               <div className="space-y-1">
@@ -147,8 +147,8 @@ export function AdminCreateHub() {
                       onClick={() => switchConfig(key)}
                       className={`w-full rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
                         active
-                          ? "bg-teal-500/10 text-teal-400 border border-teal-500/20 shadow-md shadow-teal-500/5"
-                          : "text-slate-400 border border-transparent hover:bg-slate-900/60 hover:text-slate-200"
+                          ? "bg-teal-50 text-teal-700 border border-teal-100/60 shadow-sm"
+                          : "text-slate-600 border border-transparent hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       {ADMIN_TABLES[key].title.replace(" Management", "")}
@@ -161,19 +161,19 @@ export function AdminCreateHub() {
         </aside>
 
         {/* Dynamic Creation Section */}
-        <section className="glass-card rounded-3xl border border-slate-800 bg-slate-900/30 p-6 shadow-xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-900 pb-5">
+        <section className="glass-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
-              <h2 className="text-lg font-black text-white">{config.title} Creator</h2>
-              <p className="text-xs text-slate-400 mt-1">{config.description}</p>
+              <h2 className="text-lg font-black text-slate-900">{config.title} Creator</h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">{config.description}</p>
             </div>
             <select
               value={selected}
               onChange={(e) => switchConfig(e.target.value as AdminTableKey)}
-              className="w-full sm:w-60 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs font-bold text-teal-400 outline-none transition-all cursor-pointer"
+              className="w-full sm:w-60 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-teal-600 outline-none transition-all cursor-pointer"
             >
               {allKeys.map((key) => (
-                <option key={key} value={key} className="bg-slate-950 text-white">
+                <option key={key} value={key} className="bg-white text-slate-800">
                   {ADMIN_TABLES[key].title}
                 </option>
               ))}
@@ -182,19 +182,19 @@ export function AdminCreateHub() {
 
           {/* Explicit Category Guide Card */}
           {selected === "categories" && (
-            <div className="rounded-2xl border border-teal-500/10 bg-teal-500/5 p-4 space-y-2">
-              <p className="text-xs font-black text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-teal-400 glow-active shadow-[0_0_8px_#2dd4bf]" />
+            <div className="rounded-2xl border border-teal-100 bg-teal-50/50 p-4 space-y-2">
+              <p className="text-xs font-black text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-500 glow-active shadow-[0_0_8px_rgba(20,184,166,0.2)]" />
                 How to Build Categories & Subcategories:
               </p>
-              <div className="text-[11px] text-slate-300 space-y-1.5 leading-relaxed">
+              <div className="text-[11px] text-slate-600 space-y-1.5 leading-relaxed font-semibold">
                 <p>
-                  1. **Parent Category**: Leave the <strong className="text-slate-200">Parent Key</strong> field empty. Set <strong className="text-slate-200">Scope</strong> (e.g. `services` for Local Services, `businesses` for Shops).
+                  1. **Parent Category**: Leave the <strong className="text-slate-900">Parent Key</strong> field empty. Set <strong className="text-slate-900">Scope</strong> (e.g. `services` for Local Services, `businesses` for Shops).
                 </p>
                 <p>
-                  2. **Subcategory (Cascading Dropdown item)**: Enter a unique key. In the <strong className="text-slate-200">Parent Key</strong> dropdown list, select your Parent Category. Match the Scope.
+                  2. **Subcategory (Cascading Dropdown item)**: Enter a unique key. In the <strong className="text-slate-900">Parent Key</strong> dropdown list, select your Parent Category. Match the Scope.
                 </p>
-                <p className="text-slate-400 font-medium">
+                <p className="text-slate-500 font-medium">
                   Once created, they will immediately show up inside the **Create Partner Login** wizard cascading select menus!
                 </p>
               </div>
@@ -212,11 +212,11 @@ export function AdminCreateHub() {
                   <select
                     value={String(values[column.key] ?? "")}
                     onChange={(e) => update(column.key, e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white focus:border-teal-500/40 outline-none transition-all cursor-pointer"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 focus:border-teal-500/40 outline-none transition-all cursor-pointer"
                   >
-                    <option value="" className="text-slate-500">-- Choose --</option>
+                    <option value="" className="text-slate-400">-- Choose --</option>
                     {optionList(column).map((option) => (
-                      <option key={option.value} value={option.value} className="bg-slate-950 text-white">
+                      <option key={option.value} value={option.value} className="bg-white text-slate-800">
                         {option.label}
                       </option>
                     ))}
@@ -227,7 +227,7 @@ export function AdminCreateHub() {
                       type="checkbox"
                       checked={Boolean(values[column.key])}
                       onChange={(e) => update(column.key, e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                      className="h-4 w-4 rounded border-slate-200 bg-white text-teal-500 focus:ring-0 cursor-pointer"
                     />
                   </div>
                 ) : column.type === "json" ? (
@@ -235,7 +235,7 @@ export function AdminCreateHub() {
                     value={String(values[column.key] ?? "")}
                     onChange={(e) => update(column.key, e.target.value)}
                     placeholder='{"key": "value"}'
-                    className="w-full min-h-24 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white placeholder-slate-700 focus:border-teal-500/40 outline-none transition-all"
+                    className="w-full min-h-24 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 outline-none transition-all"
                   />
                 ) : (
                   <input
@@ -243,7 +243,7 @@ export function AdminCreateHub() {
                     value={String(values[column.key] ?? "")}
                     onChange={(e) => update(column.key, e.target.value)}
                     placeholder={`Enter ${column.label}`}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-semibold text-white placeholder-slate-700 focus:border-teal-500/40 outline-none transition-all"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 outline-none transition-all"
                   />
                 )}
               </label>
@@ -251,45 +251,45 @@ export function AdminCreateHub() {
 
             {/* Special boolean switches */}
             {config.approveField && (
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-400 pt-5">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={Boolean(values[config.approveField])}
                   onChange={(e) => update(config.approveField!, e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-200 bg-white text-teal-500 focus:ring-0 cursor-pointer"
                 />
                 Auto-Approved
               </label>
             )}
             {config.featuredField && (
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-400 pt-5">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={Boolean(values[config.featuredField])}
                   onChange={(e) => update(config.featuredField!, e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-200 bg-white text-teal-500 focus:ring-0 cursor-pointer"
                 />
                 Featured Listing
               </label>
             )}
             {config.activeField && (
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-400 pt-5">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={Boolean(values[config.activeField])}
                   onChange={(e) => update(config.activeField!, e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-200 bg-white text-teal-500 focus:ring-0 cursor-pointer"
                 />
                 Active Creative
               </label>
             )}
             {config.availabilityField && (
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-400 pt-5">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={Boolean(values[config.availabilityField])}
                   onChange={(e) => update(config.availabilityField!, e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-200 bg-white text-teal-500 focus:ring-0 cursor-pointer"
                 />
                 Available for Bookings
               </label>
@@ -297,17 +297,17 @@ export function AdminCreateHub() {
           </div>
 
           {/* Footer Submit area */}
-          <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-4 border-t border-slate-900/60 pt-5">
+          <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-4 border-t border-slate-100 pt-5">
             <button
               type="button"
               disabled={saving}
               onClick={create}
-              className="rounded-xl bg-teal-500 px-6 py-3 text-xs font-black tracking-wide text-slate-950 hover:bg-teal-400 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-150 shadow-md shadow-teal-500/10 cursor-pointer"
+              className="rounded-xl bg-teal-600 px-6 py-3 text-xs font-black tracking-wide text-white hover:bg-teal-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-150 shadow-sm cursor-pointer"
             >
               {saving ? "Creating Entry..." : `Add ${config.title.replace(" Management", "")}`}
             </button>
             {message && (
-              <p className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <p className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -315,7 +315,7 @@ export function AdminCreateHub() {
               </p>
             )}
             {error && (
-              <p className="text-xs font-bold text-red-400 flex items-center gap-1.5">
+              <p className="text-xs font-bold text-red-600 flex items-center gap-1.5">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
