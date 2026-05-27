@@ -20,6 +20,11 @@ export function PartnerUserCard() {
     password: "",
     role: "business",
     assignedTargetId: "",
+    newTargetName: "",
+    newTargetCategory: "",
+    newTargetSubcategory: "",
+    newTargetArea: "",
+    newTargetVehicleNumber: "",
   });
   const [options, setOptions] = useState<OptionMap>({});
   const [saving, setSaving] = useState(false);
@@ -40,18 +45,21 @@ export function PartnerUserCard() {
       return {
         label: "Shop / Business",
         options: options.unassignedBusinesses ?? [],
+        categories: (options as any).businessCategories ?? [],
       };
     }
     if (form.role === "service_provider") {
       return {
         label: "Service Profile",
         options: options.unassignedServices ?? [],
+        categories: (options as any).serviceCategories ?? [],
       };
     }
     if (form.role === "auto_driver") {
       return {
         label: "Auto Driver Profile",
         options: options.unassignedAutoDrivers ?? [],
+        categories: [],
       };
     }
     return null;
@@ -62,6 +70,17 @@ export function PartnerUserCard() {
       setError(`Select ${assignment.label} before creating login.`);
       return;
     }
+    if (assignment && form.assignedTargetId === "create_new") {
+      if (form.role !== "auto_driver" && !form.newTargetCategory) {
+        setError(`Please select a Category for the new ${assignment.label}.`);
+        return;
+      }
+      if (form.role === "auto_driver" && !form.newTargetVehicleNumber.trim()) {
+        setError("Please enter a Vehicle Number for the new driver.");
+        return;
+      }
+    }
+
     setSaving(true);
     setMessage(null);
     setError(null);
@@ -81,6 +100,11 @@ export function PartnerUserCard() {
         password: "",
         role: "business",
         assignedTargetId: "",
+        newTargetName: "",
+        newTargetCategory: "",
+        newTargetSubcategory: "",
+        newTargetArea: "",
+        newTargetVehicleNumber: "",
       });
       fetch("/api/admin/options")
         .then((res) => res.json())
@@ -162,12 +186,21 @@ export function PartnerUserCard() {
           <select
             value={form.assignedTargetId}
             onChange={(e) =>
-              setForm({ ...form, assignedTargetId: e.target.value })
+              setForm({
+                ...form,
+                assignedTargetId: e.target.value,
+                newTargetName: "",
+                newTargetCategory: "",
+                newTargetSubcategory: "",
+                newTargetArea: "",
+                newTargetVehicleNumber: "",
+              })
             }
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white text-slate-900 font-medium"
             required
           >
             <option value="">Select {assignment.label}</option>
+            <option value="create_new" className="text-emerald-700 font-semibold">+ Create New {assignment.label}</option>
             {assignment.options.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -176,13 +209,81 @@ export function PartnerUserCard() {
           </select>
         )}
       </div>
-      {assignment && assignment.options.length === 0 && (
+
+      {assignment && form.assignedTargetId === "create_new" && (
+        <div className="mt-4 p-4 border border-emerald-200 rounded-lg bg-emerald-50/50 grid gap-3 md:grid-cols-3">
+          <div className="col-span-3">
+            <h3 className="text-sm font-semibold text-emerald-950">
+              New {assignment.label} Details
+            </h3>
+            <p className="text-xs text-emerald-800">
+              This profile will be created and linked to this partner account automatically.
+            </p>
+          </div>
+          {form.role !== "auto_driver" && (
+            <>
+              <input
+                value={form.newTargetName}
+                onChange={(e) => setForm({ ...form, newTargetName: e.target.value })}
+                placeholder={`${assignment.label} Name (optional - defaults to partner name)`}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 col-span-1"
+              />
+              <select
+                value={form.newTargetCategory}
+                onChange={(e) => setForm({ ...form, newTargetCategory: e.target.value })}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 col-span-1"
+                required
+              >
+                <option value="">Select Category *</option>
+                {assignment.categories.map((cat: any) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={form.newTargetSubcategory}
+                onChange={(e) => setForm({ ...form, newTargetSubcategory: e.target.value })}
+                placeholder="Subcategory (optional, e.g. AC, Plumbing)"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 col-span-1"
+              />
+            </>
+          )}
+          {form.role === "service_provider" && (
+            <input
+              value={form.newTargetArea}
+              onChange={(e) => setForm({ ...form, newTargetArea: e.target.value })}
+              placeholder="Service Area (optional, e.g. Sector 5)"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 col-span-1"
+            />
+          )}
+          {form.role === "auto_driver" && (
+            <>
+              <input
+                value={form.newTargetVehicleNumber}
+                onChange={(e) => setForm({ ...form, newTargetVehicleNumber: e.target.value })}
+                placeholder="Vehicle Number * (e.g. MH12AB1234)"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 col-span-1"
+                required
+              />
+              <input
+                value={form.newTargetArea}
+                onChange={(e) => setForm({ ...form, newTargetArea: e.target.value })}
+                placeholder="Service Area (optional, e.g. Sector 5)"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 col-span-1"
+              />
+            </>
+          )}
+        </div>
+      )}
+
+      {assignment && assignment.options.length === 0 && form.assignedTargetId !== "create_new" && (
         <p className="mt-3 text-sm text-amber-700">
-          No unassigned {assignment.label.toLowerCase()} found. Create the shop/profile first or unassign an existing one.
+          No unassigned {assignment.label.toLowerCase()} found. Select "+ Create New" to create one automatically or unassign an existing one.
         </p>
       )}
-      {message && <p className="mt-3 text-sm text-emerald-700">{message}</p>}
-      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      {message && <p className="mt-3 text-sm text-emerald-700 font-semibold">{message}</p>}
+      {error && <p className="mt-3 text-sm text-red-700 font-semibold">{error}</p>}
     </section>
   );
 }

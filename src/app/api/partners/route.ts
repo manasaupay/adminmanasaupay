@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getAdminClient()!;
-  if (assignment) {
+  const isCreateNew = assignedTargetId === "create_new";
+
+  if (assignment && !isCreateNew) {
     const { data: target, error: targetError } = await supabase
       .from(assignment.table)
       .select(`id,${assignment.field}`)
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // 1. Create the Auth user
   const { data: authData, error: authError } =
     await supabase.auth.admin.createUser({
       email,
@@ -96,7 +99,7 @@ export async function POST(req: NextRequest) {
       app_metadata: {
         role,
         assigned_target_type: assignment?.appType,
-        assigned_target_id: assignment ? assignedTargetId : undefined,
+        assigned_target_id: !isCreateNew && assignment ? assignedTargetId : undefined,
       },
     });
 
@@ -107,41 +110,118 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { error: profileError } = await supabase.from("users").upsert({
-    id: authData.user.id,
-    email,
-    name,
-    phone,
-    role,
-    is_verified: true,
-    meta: {
-      assigned_target_type: assignment?.appType,
-      assigned_target_id: assignment ? assignedTargetId : undefined,
-    },
-  });
+  let finalTargetId = isCreateNew ? null : (assignment ? assignedTargetId : null);
 
-  if (profileError) {
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
-  }
+  try {
+    // 2. If 'create_new', create the new profile
+    if (assignment && isCreateNew) {
+      if (role === "business") {
+        const { data: newTarget, error: createError } = await supabase
+          .from("businesses")
+          .insert({
+            name: body.newTargetName || name || "New Business",
+            category: body.newTargetCategory || "General",
+            subcategory: body.newTargetSubcategory || "",
+            phone: phone || body.newTargetContact || "",
+            owner_id: authData.user.id,
+            is_approved: true,
+          })
+          .select("id")
+          .single();
 
-  if (assignment) {
-    const { error: assignError } = await supabase
-      .from(assignment.table)
-      .update({ [assignment.field]: authData.user.id })
-      .eq("id", assignedTargetId);
+        if (createError) throw new Error(`Could not create business profile: ${createError.message}`);
+        finalTargetId = newTarget.id;
+      } else if (role === "service_provider") {
+        const { data: newTarget, error: createError } = await supabase
+          .from("services")
+          .insert({
+            name: body.newTargetName || name || "New Service",
+            category: body.newTargetCategory || "General",
+            subcategory: body.newTargetSubcategory || "",
+            contact: phone || body.newTargetContact || "",
+            area: body.newTargetArea || "",
+            provider_id: authData.user.id,
+            is_approved: true,
+          })
+          .select("id")
+          .single();
 
-    if (assignError) {
-      await supabase.from("users").delete().eq("id", authData.user.id);
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json({ error: assignError.message }, { status: 500 });
+        if (createError) throw new Error(`Could not create service profile: ${createError.message}`);
+        finalTargetId = newTarget.id;
+      } else if (role === "auto_driver") {
+        const { data: newTarget, error: createError } = await supabase
+          .from("auto_drivers")
+          .insert({
+            name: name || "New Driver",
+            phone: phone || "",
+            vehicle_number: body.newTargetVehicleNumber || "TBD",
+            area: body.newTargetArea || "",
+            user_id: authData.user.id,
+            is_approved: true,
+          })
+          .select("id")
+          .single();
+
+        if (createError) throw new Error(`Could not create auto driver profile: ${createError.message}`);
+        finalTargetId = newTarget.id;
+      }
     }
+
+    // 3. Create the user public profile
+    const { error: profileError } = await supabase.from("users").upsert({
+      id: authData.user.id,
+      email,
+      name,
+      phone,
+      role,
+      is_verified: true,
+      meta: {
+        assigned_target_type: assignment?.appType,
+        assigned_target_id: finalTargetId || undefined,
+      },
+    });
+
+    if (profileError) throw new Error(`Could not create public user record: ${profileError.message}`);
+
+    // 4. Update the existing profile if assigning to an already existing profile
+    if (assignment && !isCreateNew) {
+      const { error: assignError } = await supabase
+        .from(assignment.table)
+        .update({ [assignment.field]: authData.user.id })
+        .eq("id", assignedTargetId);
+
+      if (assignError) throw new Error(`Could not update target profile: ${assignError.message}`);
+    }
+
+    // 5. Update Auth app_metadata if we dynamically created the profile
+    if (assignment && isCreateNew && finalTargetId) {
+      const { error: updateAuthError } = await supabase.auth.admin.updateUserById(authData.user.id, {
+        app_metadata: {
+          role,
+          assigned_target_type: assignment.appType,
+          assigned_target_id: finalTargetId,
+        },
+      });
+      if (updateAuthError) {
+        console.error("Warning: Could not update auth app_metadata:", updateAuthError.message);
+      }
+    }
+
+  } catch (e: any) {
+    // Rollback
+    if (assignment && isCreateNew && finalTargetId) {
+      await supabase.from(assignment.table).delete().eq("id", finalTargetId);
+    }
+    await supabase.from("users").delete().eq("id", authData.user.id);
+    await supabase.auth.admin.deleteUser(authData.user.id);
+
+    return NextResponse.json({ error: e.message || "Failed to create partner." }, { status: 500 });
   }
 
   return NextResponse.json({
     id: authData.user.id,
     email,
     role,
-    assignedTargetId: assignment ? assignedTargetId : null,
+    assignedTargetId: finalTargetId,
   });
 }

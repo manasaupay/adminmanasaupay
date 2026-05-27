@@ -73,6 +73,22 @@ export async function GET() {
         label: `${row.label ?? row.key}${row.parent_key ? ` / ${row.parent_key}` : ""}`,
       })),
     ),
+    serviceCategories: uniqueOptions(
+      categoryRows
+        .filter((row) => row.scope === "services" || row.scope === "global")
+        .map((row) => ({
+          value: row.key,
+          label: row.label ?? row.key,
+        })),
+    ),
+    businessCategories: uniqueOptions(
+      categoryRows
+        .filter((row) => row.scope === "businesses" || row.scope === "global")
+        .map((row) => ({
+          value: row.key,
+          label: row.label ?? row.key,
+        })),
+    ),
     businesses: businessRows.map((row) => ({
       value: row.id,
       label: `${row.name ?? "Business"}${row.category ? ` · ${row.category}` : ""}`,
