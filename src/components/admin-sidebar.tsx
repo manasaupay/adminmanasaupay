@@ -2,54 +2,101 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useMemo } from "react";
 import { NAV_GROUPS } from "@/lib/constants";
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [env, setEnv] = useState<"production" | "staging" | "development">("production");
+
+  // Dynamic search filtering
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return NAV_GROUPS;
+    const query = searchQuery.toLowerCase().trim();
+    return NAV_GROUPS.map((group) => {
+      const items = group.items.filter(
+        (item) =>
+          item.label.toLowerCase().includes(query) ||
+          item.href.toLowerCase().includes(query)
+      );
+      return { ...group, items };
+    }).filter((group) => group.items.length > 0);
+  }, [searchQuery]);
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-200 bg-white shadow-sm lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-200 bg-white shadow-[1px_0_5px_rgba(0,0,0,0.01)] lg:flex">
       {/* Brand Header */}
-      <div className="border-b border-slate-100 px-6 py-6 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-200 glow-active">
-          <svg className="h-5 w-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+      <div className="border-b border-slate-100 px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-200 glow-active">
+            <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-base font-black tracking-tight text-slate-900 flex items-center gap-1.5">
+              Manasa <span className="text-teal-700 font-bold text-[10px] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">OPS</span>
+            </p>
+            <p className="text-[9px] uppercase font-bold tracking-widest text-slate-400">Hyperlocal Control</p>
+          </div>
         </div>
-        <div>
-          <p className="text-lg font-black tracking-tight text-slate-900 flex items-center gap-1.5">
-            Manasa <span className="text-teal-700 font-semibold text-xs bg-teal-50 px-2 py-0.5 rounded border border-teal-100">Ops</span>
-          </p>
-          <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mt-0.5">Hyperlocal Console</p>
+      </div>
+
+      {/* Real-time Quick Search Bar */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="relative flex items-center">
+          <span className="absolute left-3.5 text-slate-400">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search operations tab..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 focus:bg-white focus:ring-2 focus:ring-teal-500/10 outline-none transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Navigation list */}
-      <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-6 scrollbar-thin">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.title} className="space-y-1.5">
-            <div className="px-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-4 py-3 scrollbar-thin">
+        {filteredGroups.map((group) => (
+          <div key={group.title} className="space-y-1">
+            <div className="px-3.5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">
               {group.title}
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 ${
+                    className={`group flex items-center gap-3 rounded-xl px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-200 border ${
                       active
-                        ? "bg-teal-50 text-teal-700 border border-teal-100/60 shadow-sm"
-                        : "text-slate-600 border border-transparent hover:bg-slate-50 hover:text-slate-900"
+                        ? "bg-teal-50/80 text-teal-700 border-teal-100 shadow-[0_2px_8px_-1px_rgba(13,148,136,0.08)]"
+                        : "text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
                     <span className={`transition-transform duration-200 group-hover:scale-110 ${active ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
                       {getIcon(item.href)}
                     </span>
-                    <span className="flex-1">{item.label}</span>
+                    <span className="flex-1 truncate">{item.label}</span>
                     {active && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.4)]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.5)]" />
                     )}
                   </Link>
                 );
@@ -57,19 +104,43 @@ export function AdminSidebar() {
             </div>
           </div>
         ))}
+        {filteredGroups.length === 0 && (
+          <p className="text-[10px] text-center text-slate-400 font-bold py-6">
+            No tabs match your search
+          </p>
+        )}
       </nav>
 
-      {/* Operations Info Card */}
-      <div className="p-4 border-t border-slate-100 bg-slate-50/40">
-        <div className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm">
+      {/* Operations Info & Environment Switcher Card */}
+      <div className="p-4 border-t border-slate-100 bg-slate-50/40 space-y-3">
+        {/* Environment Selection Dropdown */}
+        <div className="flex items-center justify-between gap-2 bg-white border border-slate-150 p-2 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+          <div className="flex items-center gap-1.5">
+            <span className={`h-2 w-2 rounded-full ${
+              env === "production" ? "bg-emerald-500" : env === "staging" ? "bg-amber-500" : "bg-indigo-500"
+            }`} />
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Env:</span>
+          </div>
+          <select
+            value={env}
+            onChange={(e) => setEnv(e.target.value as any)}
+            className="text-[10px] font-black uppercase text-slate-700 tracking-wide bg-transparent outline-none cursor-pointer"
+          >
+            <option value="production">Production</option>
+            <option value="staging">Staging</option>
+            <option value="development">Dev / Local</option>
+          </select>
+        </div>
+
+        <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
             <svg className="h-4 w-4 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <span>Live Security</span>
+            <span>Live Security Shield</span>
           </div>
-          <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
-            All writes, user creations and assignments are protected under strict public/auth policies.
+          <p className="text-[9px] text-slate-400 font-semibold mt-1 leading-relaxed">
+            Linked to encrypted Supabase endpoints. Unauthorized modifications are rejected.
           </p>
         </div>
       </div>
