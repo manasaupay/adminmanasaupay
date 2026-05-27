@@ -161,7 +161,6 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
         payload[col.key] = raw;
       }
     });
-    // include special fields (booleans managed outside columns)
     if (config.approveField && values[config.approveField] !== undefined) payload[config.approveField] = values[config.approveField];
     if (config.featuredField && values[config.featuredField] !== undefined) payload[config.featuredField] = values[config.featuredField];
     if (config.activeField && values[config.activeField] !== undefined) payload[config.activeField] = values[config.activeField];
@@ -198,32 +197,37 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Title block */}
+      <div className="glass-card rounded-3xl border border-slate-800 bg-slate-900/30 p-6 shadow-2xl">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-900 pb-5">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{config.title}</h1>
-            <p className="mt-1 text-slate-600">{config.description}</p>
+            <h1 className="text-xl font-black tracking-tight text-white">{config.title}</h1>
+            <p className="text-xs text-slate-400 mt-1">{config.description}</p>
           </div>
-          <SendNotificationButton section={config.sectionKey} />
+          <div className="shrink-0">
+            <SendNotificationButton section={config.sectionKey} />
+          </div>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total</p>
-            <p className="mt-1 text-2xl font-bold text-slate-950">{rows.length}</p>
+
+        {/* Local metrics sub-block */}
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-4">
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">Total Entries</p>
+            <p className="mt-1 text-2xl font-black text-white">{rows.length}</p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {config.approveField ? "Pending" : "Active"}
+          <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-4">
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">
+              {config.approveField ? "Pending Approval" : "Active In-app"}
             </p>
-            <p className="mt-1 text-2xl font-bold text-amber-700">
+            <p className="mt-1 text-2xl font-black text-amber-400">
               {config.approveField ? pendingCount : activeCount}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {config.approveField ? "Approved" : "Showing"}
+          <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-4">
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-500">
+              {config.approveField ? "Approved" : "Showing Filtered"}
             </p>
-            <p className="mt-1 text-2xl font-bold text-emerald-700">
+            <p className="mt-1 text-2xl font-black text-emerald-400">
               {config.approveField ? approvedCount : visibleRows.length}
             </p>
           </div>
@@ -231,39 +235,52 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          <p className="font-medium">Supabase error</p>
-          <p className="mt-1">{error}</p>
-          <p className="mt-2 text-xs">
-            Check <code>.env.local</code>: URL must be <code>https://pgnnvnjuxmflshgshcni.supabase.co</code> and include <code>SUPABASE_SERVICE_ROLE_KEY</code>. Run migration SQL in Supabase.
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs font-bold text-red-400">
+          <p className="font-extrabold text-white flex items-center gap-1.5">
+            <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Supabase Connection Issue
+          </p>
+          <p className="mt-1.5 leading-relaxed">{error}</p>
+          <p className="mt-2 text-[10px] text-slate-500 font-bold">
+            Verify credentials in .env.local: SUPABASE_SERVICE_ROLE_KEY & tables migrations.
           </p>
         </div>
       )}
 
       {loading ? (
-        <p className="text-slate-500">Loading from Supabase…</p>
+        <div className="flex items-center gap-2 p-6 justify-center">
+          <span className="h-2.5 w-2.5 rounded-full bg-teal-400 glow-active" />
+          <p className="text-xs font-bold text-slate-400 tracking-wide">Syncing entries with Supabase...</p>
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${config.title.toLowerCase()}`}
-              className="min-w-64 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-            />
+        <div className="overflow-x-auto rounded-3xl border border-slate-900 bg-[#070b13] shadow-2xl backdrop-blur-md">
+          {/* Table Header Filter controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900 p-5">
+            <div className="flex-1 relative">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search ${config.title.toLowerCase()}...`}
+                className="w-full sm:max-w-xs rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs font-semibold text-white placeholder-slate-600 focus:border-teal-500/40 focus:ring-1 focus:ring-teal-500/20 outline-none transition-all"
+              />
+            </div>
+            
             <div className="flex flex-wrap gap-2">
               {(["all", "pending", "approved", "active"] as const).map((filter) => {
                 if ((filter === "pending" || filter === "approved") && !config.approveField) return null;
                 if (filter === "active" && !config.activeField) return null;
+                const active = statusFilter === filter;
                 return (
                   <button
                     key={filter}
                     type="button"
                     onClick={() => setStatusFilter(filter)}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold capitalize ${
-                      statusFilter === filter
-                        ? "bg-teal-700 text-white"
-                        : "border border-slate-200 bg-white text-slate-700"
+                    className={`rounded-lg px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                      active
+                        ? "bg-teal-500 text-slate-950 shadow-md shadow-teal-500/5"
+                        : "border border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
                     }`}
                   >
                     {filter}
@@ -272,19 +289,20 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
               })}
             </div>
           </div>
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b bg-slate-50 text-slate-600">
+
+          <table className="min-w-full text-left text-xs border-collapse">
+            <thead className="border-b border-slate-900 bg-slate-950/40 text-slate-400">
               <tr>
                 {config.columns.map((c) => (
-                  <th key={c.key} className="px-4 py-3">
+                  <th key={c.key} className="px-5 py-4 font-black uppercase tracking-wider text-[10px]">
                     {c.label}
                   </th>
                 ))}
-                <th className="px-4 py-3">Actions</th>
-                {config.approveField && <th className="px-4 py-3">Approved</th>}
-                {config.featuredField && <th className="px-4 py-3">Featured</th>}
-                {config.activeField && <th className="px-4 py-3">Active</th>}
-                {config.availabilityField && <th className="px-4 py-3">Available</th>}
+                <th className="px-5 py-4 font-black uppercase tracking-wider text-[10px]">Actions</th>
+                {config.approveField && <th className="px-5 py-4 font-black uppercase tracking-wider text-[10px] text-center">Approved</th>}
+                {config.featuredField && <th className="px-5 py-4 font-black uppercase tracking-wider text-[10px] text-center">Featured</th>}
+                {config.activeField && <th className="px-5 py-4 font-black uppercase tracking-wider text-[10px] text-center">Active</th>}
+                {config.availabilityField && <th className="px-5 py-4 font-black uppercase tracking-wider text-[10px] text-center">Available</th>}
               </tr>
             </thead>
             <tbody>
@@ -292,66 +310,72 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                 const id = String(row.id);
                 const editable = editingRows[id] ?? createEditableRow(config, row);
                 return (
-                  <tr key={id} className="border-b last:border-0">
+                  <tr key={id} className="border-b border-slate-900 last:border-0 hover:bg-slate-900/10 transition-colors">
                     {config.columns.map((c) => (
-                      <td key={c.key} className="max-w-xs truncate px-4 py-3">
-                            {(c.type === "enum" && c.options) || c.optionSource ? (
-                              <select
-                                value={String(editable[c.key] ?? "")}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                              >
-                                <option value="">— select —</option>
-                                {optionsFor(c).map((opt) => (
-                                  <option key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : c.type === "boolean" ? (
-                              <input
-                                type="checkbox"
-                                checked={Boolean(editable[c.key])}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.checked)}
-                              />
-                            ) : c.type === "date" ? (
-                              <input
-                                type="date"
-                                value={String(editable[c.key] ?? "")}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                              />
-                            ) : c.type === "json" ? (
-                              <textarea
-                                value={String(editable[c.key] ?? "")}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                              />
-                            ) : c.type === "image" ? (
-                              <input
-                                type="text"
-                                placeholder="Image URL"
-                                value={String(editable[c.key] ?? "")}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                              />
-                            ) : (
-                              <input
-                                type="text"
-                                value={formatValue(editable[c.key])}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                              />
-                            )}
+                      <td key={c.key} className="max-w-xs truncate px-5 py-3">
+                        {(c.type === "enum" && c.options) || c.optionSource ? (
+                          <select
+                            value={String(editable[c.key] ?? "")}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-teal-500/40"
+                          >
+                            <option value="" className="text-slate-500">— select —</option>
+                            {optionsFor(c).map((opt) => (
+                              <option key={opt.value} value={opt.value} className="bg-slate-950 text-white">
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : c.type === "boolean" ? (
+                          <div className="flex justify-center">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(editable[c.key])}
+                              onChange={(e) => updateRowValue(id, c.key, e.target.checked)}
+                              className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
+                            />
+                          </div>
+                        ) : c.type === "date" ? (
+                          <input
+                            type="date"
+                            value={String(editable[c.key] ?? "")}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40"
+                          />
+                        ) : c.type === "json" ? (
+                          <textarea
+                            value={String(editable[c.key] ?? "")}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40"
+                            rows={1}
+                          />
+                        ) : c.type === "image" ? (
+                          <input
+                            type="text"
+                            placeholder="Image URL"
+                            value={String(editable[c.key] ?? "")}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40 placeholder-slate-700"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={formatValue(editable[c.key])}
+                            onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-white outline-none focus:border-teal-500/40 placeholder-slate-700"
+                          />
+                        )}
                       </td>
                     ))}
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
+                    
+                    {/* Operations save/delete buttons */}
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           disabled={saving}
                           onClick={() => patch(id, editable)}
-                          className="rounded-lg bg-teal-600 px-3 py-1 text-xs font-semibold text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-lg bg-teal-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-teal-400 border border-teal-500/20 hover:bg-teal-500/20 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
                         >
                           Save
                         </button>
@@ -359,16 +383,18 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                           type="button"
                           disabled={saving}
                           onClick={() => {
-                            if (confirm("Delete this row?")) remove(id);
+                            if (confirm("Permanently delete this entry?")) remove(id);
                           }}
-                          className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-red-300 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-red-400 hover:bg-red-500/20 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
                         >
                           Delete
                         </button>
                       </div>
                     </td>
+
+                    {/* Operational switches */}
                     {config.approveField && (
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3 text-center">
                         <input
                           type="checkbox"
                           checked={Boolean(row[config.approveField])}
@@ -377,11 +403,12 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.approveField!]: e.target.checked,
                             })
                           }
+                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
                     {config.featuredField && (
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3 text-center">
                         <input
                           type="checkbox"
                           checked={Boolean(row[config.featuredField])}
@@ -390,11 +417,12 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.featuredField!]: e.target.checked,
                             })
                           }
+                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
                     {config.activeField && (
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3 text-center">
                         <input
                           type="checkbox"
                           checked={Boolean(row[config.activeField])}
@@ -403,11 +431,12 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.activeField!]: e.target.checked,
                             })
                           }
+                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
                     {config.availabilityField && (
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3 text-center">
                         <input
                           type="checkbox"
                           checked={Boolean(row[config.availabilityField])}
@@ -416,6 +445,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                               [config.availabilityField!]: e.target.checked,
                             })
                           }
+                          className="h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-500 focus:ring-0 cursor-pointer"
                         />
                       </td>
                     )}
@@ -425,8 +455,8 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
             </tbody>
           </table>
           {rows.length === 0 && !error && (
-            <p className="p-6 text-center text-slate-500">
-              No records yet. Use Add New to create the first item.
+            <p className="p-12 text-center text-xs font-bold text-slate-500">
+              No entries found. Click "Add New" or use User Setup wizards to inject records.
             </p>
           )}
         </div>
