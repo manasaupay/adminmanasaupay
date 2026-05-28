@@ -35,6 +35,7 @@ export const NAV_GROUPS = [
     title: "Overview",
     items: [
       { href: "/", label: "Operations Dashboard" },
+      { href: "/add-new", label: "Create New Entry" },
     ],
   },
   {
