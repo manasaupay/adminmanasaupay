@@ -26,6 +26,31 @@ function createEditableRow(config: AdminTableConfig, row: Row): EditableRow {
     } else {
       editable[column.key] = value === null || value === undefined ? "" : String(value);
     }
+
+    if (column.optionSource === "businesses") {
+      if (!value || value === "") {
+        const meta = row.meta;
+        let businessName = "";
+        if (meta && typeof meta === "object") {
+          businessName = (meta as Record<string, unknown>).business_name as string || "";
+        } else if (meta && typeof meta === "string") {
+          try {
+            const parsed = JSON.parse(meta);
+            businessName = parsed.business_name || "";
+          } catch {
+            // Ignore
+          }
+        }
+        if (businessName) {
+          editable[column.key] = "__manual__";
+          editable[`${column.key}_manual_name`] = businessName;
+        } else {
+          editable[`${column.key}_manual_name`] = "";
+        }
+      } else {
+        editable[`${column.key}_manual_name`] = "";
+      }
+    }
   });
   if (config.approveField) editable[config.approveField] = Boolean(row[config.approveField]);
   if (config.featuredField) editable[config.featuredField] = Boolean(row[config.featuredField]);
@@ -148,17 +173,47 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   }
 
   function optionsFor(column: AdminTableConfig["columns"][number]) {
-    if (column.optionSource) return dynamicOptions[column.optionSource] ?? [];
-    return column.options?.map((option) => ({ value: option, label: option })) ?? [];
+    const list = [];
+    if (column.optionSource) {
+      list.push(...(dynamicOptions[column.optionSource] ?? []));
+    } else {
+      list.push(...(column.options?.map((option) => ({ value: option, label: option })) ?? []));
+    }
+
+    if (column.optionSource === "businesses") {
+      list.push({ value: "__manual__", label: "✏️ Add Manually (Custom Business)" });
+    }
+    return list;
   }
 
   function preparePayload(values: EditableRow): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
+    
+    // Extract or parse existing meta
+    let metaObj: Record<string, unknown> = {};
+    if (values['meta']) {
+      try {
+        metaObj = typeof values['meta'] === 'string'
+          ? JSON.parse(values['meta'])
+          : (values['meta'] as unknown as Record<string, unknown>);
+      } catch {
+        // Ignore
+      }
+    }
+
     config.columns.forEach((col) => {
       const raw = values[col.key];
       if (raw === undefined) return;
-      if (raw === "") return;
-      if (col.type === "json") {
+      
+      if (col.optionSource === "businesses" && raw === "__manual__") {
+        payload[col.key] = null;
+        const manualName = values[`${col.key}_manual_name`] || "";
+        if (manualName) {
+          metaObj.business_name = manualName;
+        }
+      } else if (raw === "") {
+        payload[col.key] = null;
+      } else if (col.type === "json") {
         try {
           payload[col.key] = JSON.parse(String(raw));
         } catch {
@@ -172,6 +227,11 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
         payload[col.key] = raw;
       }
     });
+
+    if (Object.keys(metaObj).length > 0) {
+      payload['meta'] = metaObj;
+    }
+
     if (config.approveField && values[config.approveField] !== undefined) payload[config.approveField] = values[config.approveField];
     if (config.featuredField && values[config.featuredField] !== undefined) payload[config.featuredField] = values[config.featuredField];
     if (config.activeField && values[config.activeField] !== undefined) payload[config.activeField] = values[config.activeField];
@@ -550,18 +610,29 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                         return (
                           <td key={c.key} className="max-w-xs truncate px-5 py-3">
                             {(c.type === "enum" && c.options) || c.optionSource ? (
-                              <select
-                                value={String(editable[c.key] ?? "")}
-                                onChange={(e) => updateRowValue(id, c.key, e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-teal-500/40 cursor-pointer shadow-sm"
-                              >
-                                <option value="" className="text-slate-400">— select —</option>
-                                {optionsFor(c).map((opt) => (
-                                  <option key={opt.value} value={opt.value} className="bg-white text-slate-800">
-                                    {opt.label}
-                                  </option>
-                                ))}
-                              </select>
+                              <div className="space-y-1.5">
+                                <select
+                                  value={String(editable[c.key] ?? "")}
+                                  onChange={(e) => updateRowValue(id, c.key, e.target.value)}
+                                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-teal-500/40 cursor-pointer shadow-sm"
+                                >
+                                  <option value="" className="text-slate-400">— select —</option>
+                                  {optionsFor(c).map((opt) => (
+                                    <option key={opt.value} value={opt.value} className="bg-white text-slate-800">
+                                      {opt.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                {c.optionSource === "businesses" && editable[c.key] === "__manual__" && (
+                                  <input
+                                    type="text"
+                                    value={String(editable[`${c.key}_manual_name`] ?? "")}
+                                    onChange={(e) => updateRowValue(id, `${c.key}_manual_name`, e.target.value)}
+                                    placeholder="Custom Business Name"
+                                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-800 outline-none focus:border-teal-500/40 placeholder-slate-400"
+                                  />
+                                )}
+                              </div>
                             ) : c.type === "boolean" ? (
                               <div className="flex justify-start">
                                 <span className={`badge-status ${Boolean(editable[c.key]) ? "badge-approved" : "badge-blocked"}`}>

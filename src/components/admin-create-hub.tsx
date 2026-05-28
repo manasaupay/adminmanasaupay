@@ -30,10 +30,30 @@ function createBlankRow(config: AdminTableConfig): EditableRow {
 
 function preparePayload(config: AdminTableConfig, values: EditableRow) {
   const payload: Record<string, unknown> = {};
+  
+  // Extract or parse existing meta
+  let metaObj: Record<string, unknown> = {};
+  if (values['meta']) {
+    try {
+      metaObj = typeof values['meta'] === 'string'
+        ? JSON.parse(values['meta'])
+        : (values['meta'] as unknown as Record<string, unknown>);
+    } catch {
+      // Ignore
+    }
+  }
+
   config.columns.forEach((col) => {
     const raw = values[col.key];
     if (raw === undefined || raw === "") return;
-    if (col.type === "json") {
+    
+    if (col.optionSource === "businesses" && raw === "__manual__") {
+      payload[col.key] = null;
+      const manualName = values[`${col.key}_manual_name`] || "";
+      if (manualName) {
+        metaObj.business_name = manualName;
+      }
+    } else if (col.type === "json") {
       try {
         payload[col.key] = JSON.parse(String(raw));
       } catch {
@@ -45,6 +65,11 @@ function preparePayload(config: AdminTableConfig, values: EditableRow) {
       payload[col.key] = raw;
     }
   });
+
+  if (Object.keys(metaObj).length > 0) {
+    payload['meta'] = metaObj;
+  }
+
   if (config.approveField && values[config.approveField] !== undefined) payload[config.approveField] = values[config.approveField];
   if (config.featuredField && values[config.featuredField] !== undefined) payload[config.featuredField] = values[config.featuredField];
   if (config.activeField && values[config.activeField] !== undefined) payload[config.activeField] = values[config.activeField];
@@ -73,8 +98,17 @@ export function AdminCreateHub() {
   }, []);
 
   function optionList(column: AdminTableConfig["columns"][number]) {
-    if (column.optionSource) return options[column.optionSource] ?? [];
-    return column.options?.map((option) => ({ value: option, label: option })) ?? [];
+    const list = [];
+    if (column.optionSource) {
+      list.push(...(options[column.optionSource] ?? []));
+    } else {
+      list.push(...(column.options?.map((option) => ({ value: option, label: option })) ?? []));
+    }
+    
+    if (column.optionSource === "businesses") {
+      list.push({ value: "__manual__", label: "✏️ Add Manually (Custom Business Name)" });
+    }
+    return list;
   }
 
   async function create() {
@@ -209,18 +243,29 @@ export function AdminCreateHub() {
                   {column.label}
                 </span>
                 {((column.type === "enum" && column.options) || column.optionSource) ? (
-                  <select
-                    value={String(values[column.key] ?? "")}
-                    onChange={(e) => update(column.key, e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 focus:border-teal-500/40 outline-none transition-all cursor-pointer"
-                  >
-                    <option value="" className="text-slate-400">-- Choose --</option>
-                    {optionList(column).map((option) => (
-                      <option key={option.value} value={option.value} className="bg-white text-slate-800">
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-2">
+                    <select
+                      value={String(values[column.key] ?? "")}
+                      onChange={(e) => update(column.key, e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 focus:border-teal-500/40 outline-none transition-all cursor-pointer"
+                    >
+                      <option value="" className="text-slate-400">-- Choose --</option>
+                      {optionList(column).map((option) => (
+                        <option key={option.value} value={option.value} className="bg-white text-slate-800">
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {column.optionSource === "businesses" && values[column.key] === "__manual__" && (
+                      <input
+                        type="text"
+                        value={String(values[`${column.key}_manual_name`] ?? "")}
+                        onChange={(e) => update(`${column.key}_manual_name`, e.target.value)}
+                        placeholder="Enter Custom Business Name"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 outline-none transition-all animate-fade-in"
+                      />
+                    )}
+                  </div>
                 ) : column.type === "boolean" ? (
                   <div className="flex items-center pt-2">
                     <input
