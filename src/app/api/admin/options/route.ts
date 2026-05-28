@@ -60,21 +60,44 @@ export async function GET() {
   const userRows = users.data ?? [];
   const threadRows = chatThreads.data ?? [];
 
+  const defaultCategoryRows = [
+    // Services
+    { key: "electrician", label: "Electrician", scope: "services", parent_key: null },
+    { key: "plumber", label: "Plumber", scope: "services", parent_key: null },
+    { key: "mechanic", label: "Mechanic", scope: "services", parent_key: null },
+    { key: "carpenter", label: "Carpenter", scope: "services", parent_key: null },
+    { key: "AC repair", label: "AC Repair", scope: "services", parent_key: null },
+    { key: "RO repair", label: "RO Repair", scope: "services", parent_key: null },
+    { key: "painter", label: "Painter", scope: "services", parent_key: null },
+    { key: "internet provider", label: "Internet Provider", scope: "services", parent_key: null },
+    // Businesses
+    { key: "grocery", label: "Grocery / Kirana", scope: "businesses", parent_key: null },
+    { key: "medical", label: "Medical / Pharmacy", scope: "businesses", parent_key: null },
+    { key: "restaurants", label: "Restaurant / Cafe", scope: "businesses", parent_key: null },
+    { key: "clothing", label: "Clothing / Boutique", scope: "businesses", parent_key: null },
+    { key: "electronics", label: "Electronics Shop", scope: "businesses", parent_key: null },
+    { key: "salons", label: "Salon / Parlour", scope: "businesses", parent_key: null },
+    { key: "stationery", label: "Stationery / Books", scope: "businesses", parent_key: null },
+    { key: "coaching", label: "Coaching Class", scope: "businesses", parent_key: null },
+  ];
+
+  const activeCategoryRows = categoryRows.length > 0 ? categoryRows : defaultCategoryRows;
+
   return NextResponse.json({
     categoryLabels: uniqueOptions(
-      categoryRows.map((row) => ({
-        value: row.label ?? row.key,
+      activeCategoryRows.map((row) => ({
+        value: row.key,
         label: `${row.label ?? row.key}${row.scope ? ` · ${row.scope}` : ""}`,
       })),
     ),
     categoryKeys: uniqueOptions(
-      categoryRows.map((row) => ({
+      activeCategoryRows.map((row) => ({
         value: row.key,
         label: `${row.label ?? row.key}${row.parent_key ? ` / ${row.parent_key}` : ""}`,
       })),
     ),
     serviceCategories: uniqueOptions(
-      categoryRows
+      activeCategoryRows
         .filter((row) => row.scope === "services" || row.scope === "global")
         .map((row) => ({
           value: row.key,
@@ -82,14 +105,14 @@ export async function GET() {
         })),
     ),
     businessCategories: uniqueOptions(
-      categoryRows
+      activeCategoryRows
         .filter((row) => row.scope === "businesses" || row.scope === "global")
         .map((row) => ({
           value: row.key,
           label: row.label ?? row.key,
         })),
     ),
-    allCategories: categoryRows.map((row) => ({
+    allCategories: activeCategoryRows.map((row) => ({
       key: row.key,
       label: row.label ?? row.key,
       parent_key: row.parent_key ?? null,
