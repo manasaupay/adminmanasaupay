@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient, getAdminConfigError } from "@/lib/supabase/admin";
+import { triggerAutoNotification } from "../admin/[table]/route";
 
 const allowedRoles = new Set([
   "business",
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
   const password = String(body.password ?? "");
   const name = String(body.name ?? "").trim();
   const phone = String(body.phone ?? "").trim();
+  const whatsapp = String(body.whatsapp ?? "").trim();
   const role = String(body.role ?? "business");
   const assignedTargetId = String(body.assignedTargetId ?? "").trim();
 
@@ -138,14 +140,16 @@ export async function POST(req: NextRequest) {
             category: body.newTargetCategory || "General",
             subcategory: body.newTargetSubcategory || "",
             phone: phone || body.newTargetContact || "",
+            whatsapp: whatsapp || phone || "",
             owner_id: authData.user.id,
             is_approved: true,
           })
-          .select("id")
+          .select("*")
           .single();
 
         if (createError) throw new Error(`Could not create business profile: ${createError.message}`);
         finalTargetId = newTarget.id;
+        void triggerAutoNotification("businesses", newTarget);
       } else if (role === "service_provider") {
         const { data: newTarget, error: createError } = await supabase
           .from("services")
@@ -154,21 +158,24 @@ export async function POST(req: NextRequest) {
             category: body.newTargetCategory || "General",
             subcategory: body.newTargetSubcategory || "",
             contact: phone || body.newTargetContact || "",
+            whatsapp: whatsapp || phone || "",
             area: body.newTargetArea || "",
             provider_id: authData.user.id,
             is_approved: true,
           })
-          .select("id")
+          .select("*")
           .single();
 
         if (createError) throw new Error(`Could not create service profile: ${createError.message}`);
         finalTargetId = newTarget.id;
+        void triggerAutoNotification("services", newTarget);
       } else if (role === "auto_driver") {
         const { data: newTarget, error: createError } = await supabase
           .from("auto_drivers")
           .insert({
             name: name || "New Driver",
             phone: phone || "",
+            whatsapp: whatsapp || phone || "",
             vehicle_number: body.newTargetVehicleNumber || "TBD",
             area: body.newTargetArea || "",
             user_id: authData.user.id,

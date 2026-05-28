@@ -21,7 +21,8 @@ export type AdminTableKey =
   | "call_sessions"
   | "chat_threads"
   | "chat_messages"
-  | "settings";
+  | "settings"
+  | "products";
 
 export type AdminColumnType =
   | "text"
@@ -465,6 +466,21 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "value", label: "Value" },
       { key: "description", label: "Description" },
       { key: "meta", label: "Meta (JSON)", type: "json" },
+    ],
+  },
+  products: {
+    key: "products",
+    title: "Product Catalog",
+    description: "Manage products for businesses, categories, pricing, images, and active listings.",
+    sectionKey: "businesses",
+    activeField: "active",
+    columns: [
+      { key: "name", label: "Product Name" },
+      { key: "business_id", label: "Business", optionSource: "businesses" },
+      { key: "description", label: "Description" },
+      { key: "price", label: "Price" },
+      { key: "image_url", label: "Image", type: "image" },
+      { key: "meta", label: "Product Meta (JSON)", type: "json" },
     ],
   },
 };

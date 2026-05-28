@@ -27,6 +27,7 @@ export function PartnerUserCard() {
     newTargetSubcategory: "",
     newTargetArea: "",
     newTargetVehicleNumber: "",
+    whatsapp: "",
   });
   
   const [options, setOptions] = useState<OptionMap>({});
@@ -165,6 +166,7 @@ export function PartnerUserCard() {
         newTargetSubcategory: "",
         newTargetArea: "",
         newTargetVehicleNumber: "",
+        whatsapp: "",
       });
       
       // Refresh options
@@ -460,6 +462,17 @@ export function PartnerUserCard() {
                   </div>
                 </>
               )}
+
+              {/* WhatsApp Number generally applicable for all roles */}
+              <div className="space-y-1.5 col-span-1">
+                <label className="text-[9px] uppercase font-black tracking-wider text-slate-400">WhatsApp Number</label>
+                <input
+                  value={form.whatsapp}
+                  onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+                  placeholder="e.g. 9893xxxxxx"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 outline-none"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -503,6 +516,12 @@ export function PartnerUserCard() {
                           <span className="text-slate-400 text-[10px]">Auto-Created Profile</span>
                           <span className="text-slate-850 font-bold">{form.newTargetName || form.name}</span>
                         </div>
+                        {form.whatsapp && (
+                          <div className="flex justify-between pl-3 border-l-2 border-teal-200">
+                            <span className="text-slate-400 text-[10px]">WhatsApp</span>
+                            <span className="text-slate-850 font-mono">{form.whatsapp}</span>
+                          </div>
+                        )}
                         {form.role !== "auto_driver" ? (
                           <div className="flex justify-between pl-3 border-l-2 border-teal-200">
                             <span className="text-slate-400 text-[10px]">Scope Category</span>
