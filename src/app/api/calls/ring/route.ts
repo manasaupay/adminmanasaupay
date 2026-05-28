@@ -97,6 +97,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const deepLink = `/partner/calls/${callId}?targetType=${targetType}&targetId=${targetId}&targetName=${encodeURIComponent(
+    targetName,
+  )}`;
+
   const message: MulticastMessage = {
     tokens: fcmTokens,
     data: {
@@ -107,18 +111,11 @@ export async function POST(req: NextRequest) {
       target_type: targetType,
       target_id: targetId,
       target_name: targetName,
-      deep_link: `/partner/calls/${callId}`,
+      deep_link: deepLink,
     },
     android: {
       priority: "high",
-      ttl: 30_000,
-      notification: {
-        channelId: "manasa_upay_calls",
-        sound: "default",
-        priority: "max",
-        defaultVibrateTimings: true,
-        defaultSound: true,
-      },
+      ttl: 30, // 30 seconds TTL for call alerts
     },
   };
 

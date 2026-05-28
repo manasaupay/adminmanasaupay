@@ -127,13 +127,6 @@ export async function POST(req: NextRequest) {
     android: {
       priority: "high",
       ttl: 60 * 60 * 24, // 1 day TTL
-      notification: {
-        channelId: "manasa_upay_updates",
-        sound: "default",
-        priority: "high",
-        defaultVibrateTimings: true,
-        defaultSound: true,
-      },
     },
   };
 
