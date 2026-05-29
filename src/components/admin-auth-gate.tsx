@@ -46,7 +46,6 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     setMessage("");
     const { error } = await supabase.auth.signInWithOtp({
       email: SUPPORT_EMAIL,
-      options: { shouldCreateUser: false },
     });
     setBusy(false);
     if (error) {
@@ -54,7 +53,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
     setState("otp_sent");
-    setMessage(`OTP sent to ${SUPPORT_EMAIL}`);
+    setMessage("OTP sent. Please check the admin inbox.");
   }
 
   async function verifyOtp() {
@@ -82,7 +81,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-600">Secure Admin</p>
         <h1 className="mt-2 text-2xl font-black text-slate-900">Manasa Upay Console</h1>
         <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-          Admin access is locked to {SUPPORT_EMAIL}. Supabase will send the one-time code to this email.
+          Admin access is protected with a Supabase one-time email code.
         </p>
 
         <div className="mt-6 space-y-3">
