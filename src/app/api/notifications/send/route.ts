@@ -12,7 +12,9 @@ type Audience =
   | "businesses"
   | "service_providers"
   | "auto_drivers"
-  | "selected";
+  | "selected"
+  | "categories"
+  | "users";
 
 type SendNotificationPayload = {
   title?: string;
@@ -22,6 +24,7 @@ type SendNotificationPayload = {
   deep_link?: string;
   target_meta?: {
     user_ids?: string[];
+    category_keys?: string[];
   };
 };
 
@@ -149,14 +152,29 @@ async function buildTokenQuery(
   audience: Audience,
   selectedUserIds: string[],
 ) {
-  if (audience === "selected") {
+  if (audience === "selected" || audience === "users") {
     if (selectedUserIds.length === 0) {
       return { data: [], error: null };
     }
-    return supabase
-      .from("user_fcm_tokens")
-      .select("fcm_token")
-      .in("user_id", selectedUserIds);
+    const [userTokens, deviceTokens] = await Promise.all([
+      supabase
+        .from("user_fcm_tokens")
+        .select("fcm_token")
+        .in("user_id", selectedUserIds),
+      supabase
+        .from("device_fcm_tokens")
+        .select("fcm_token")
+        .in("user_id", selectedUserIds),
+    ]);
+    return mergeTokenResponses(userTokens, deviceTokens);
+  }
+
+  if (audience === "all" || audience === "categories") {
+    const [userTokens, deviceTokens] = await Promise.all([
+      supabase.from("user_fcm_tokens").select("fcm_token"),
+      supabase.from("device_fcm_tokens").select("fcm_token"),
+    ]);
+    return mergeTokenResponses(userTokens, deviceTokens);
   }
 
   const role = roleByAudience[audience];
@@ -164,10 +182,31 @@ async function buildTokenQuery(
     return supabase.from("user_fcm_tokens").select("fcm_token");
   }
 
-  return supabase
-    .from("user_fcm_tokens")
-    .select("fcm_token, users!inner(role)")
-    .eq("users.role", role);
+  const [userTokens, deviceTokens] = await Promise.all([
+    supabase
+      .from("user_fcm_tokens")
+      .select("fcm_token, users!inner(role)")
+      .eq("users.role", role),
+    supabase
+      .from("device_fcm_tokens")
+      .select("fcm_token, users!inner(role)")
+      .eq("users.role", role),
+  ]);
+  return mergeTokenResponses(userTokens, deviceTokens);
+}
+
+function mergeTokenResponses(
+  ...responses: {
+    data: { fcm_token: string }[] | null;
+    error: { message: string } | null;
+  }[]
+) {
+  const error = responses.find((response) => response.error)?.error ?? null;
+  if (error) return { data: null, error };
+  return {
+    data: responses.flatMap((response) => response.data ?? []),
+    error: null,
+  };
 }
 
 function chunks<T>(items: T[], size: number): T[][] {

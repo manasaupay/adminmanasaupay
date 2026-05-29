@@ -9,6 +9,8 @@ const audiences = [
   "service_providers",
   "auto_drivers",
   "selected",
+  "categories",
+  "users",
 ] as const;
 
 type Audience = (typeof audiences)[number];
@@ -127,7 +129,7 @@ function NotificationsForm() {
             ))}
           </select>
         </div>
-        {audience === "selected" && (
+        {(audience === "selected" || audience === "users") && (
           <div>
             <label className="mb-1 block text-sm font-medium">
               User IDs

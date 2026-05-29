@@ -101,7 +101,16 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function triggerAutoNotification(table: string, data: any) {
+type AdminRow = Record<string, unknown>;
+
+function text(row: AdminRow, key: string, fallback = "") {
+  const value = row[key];
+  return value === null || value === undefined || value === ""
+    ? fallback
+    : String(value);
+}
+
+export async function triggerAutoNotification(table: string, data: AdminRow) {
   const ignored = new Set([
     "ads",
     "popup_ads",
@@ -121,61 +130,61 @@ export async function triggerAutoNotification(table: string, data: any) {
   switch (table) {
     case "jobs":
       title = "New Job Listing Available! 💼";
-      body = `${data.title || "Job Opportunity"} - Apply now!`;
-      deepLink = `/jobs/${data.id}`;
+      body = `${text(data, "title", "Job Opportunity")} - Apply now!`;
+      deepLink = `/jobs/${text(data, "id")}`;
       break;
     case "services":
       title = "New Service Provider in Town! 🛠️";
-      body = `${data.name || "Local Service"} offers services in ${data.area || "your area"}`;
-      deepLink = `/services/${data.id}`;
+      body = `${text(data, "name", "Local Service")} offers services in ${text(data, "area", "your area")}`;
+      deepLink = `/services/${text(data, "id")}`;
       break;
     case "businesses":
       title = "New Business Opened! 🏪";
-      body = `${data.name || "Local Shop"} is now live on Manasa Upay!`;
-      deepLink = `/shops/${data.id}`;
-      image = data.cover_image || data.logo_url || "";
+      body = `${text(data, "name", "Local Shop")} is now live on Manasa Upay!`;
+      deepLink = `/shops/${text(data, "id")}`;
+      image = text(data, "cover_image", text(data, "logo_url"));
       break;
     case "news":
       title = "Breaking News! 📰";
-      body = data.title || "Read the latest update";
-      deepLink = `/news/${data.id}`;
-      image = data.image_url || "";
+      body = text(data, "title", "Read the latest update");
+      deepLink = `/news/${text(data, "id")}`;
+      image = text(data, "image_url");
       break;
     case "events":
       title = "Upcoming Local Event! 📅";
-      body = `${data.title || "Town Event"} organized by ${data.organizer || "Community"}`;
-      deepLink = `/events/${data.id}`;
-      image = data.banner_url || "";
+      body = `${text(data, "title", "Town Event")} organized by ${text(data, "organizer", "Community")}`;
+      deepLink = `/events/${text(data, "id")}`;
+      image = text(data, "banner_url");
       break;
     case "offers":
       title = "New Deal Alert! 🏷️";
-      body = `${data.title || "Special Offer"} - Check out the discount!`;
-      deepLink = data.business_id ? `/shops/${data.business_id}` : "/";
-      image = data.banner_url || "";
+      body = `${text(data, "title", "Special Offer")} - Check out the discount!`;
+      deepLink = text(data, "business_id") ? `/shops/${text(data, "business_id")}` : "/";
+      image = text(data, "banner_url");
       break;
     case "properties":
       title = "New Property Listed! 🏠";
-      body = `${data.title || "Real Estate Listing"} in ${data.location || "Manasa"}`;
-      deepLink = `/properties/${data.id}`;
-      image = data.image_url || "";
+      body = `${text(data, "title", "Real Estate Listing")} in ${text(data, "location", "Manasa")}`;
+      deepLink = `/properties/${text(data, "id")}`;
+      image = text(data, "image_url");
       break;
     case "resale":
       title = "New Resale Item Available! 🛒";
-      body = `${data.title || "Used Item"} - Get it before it's gone!`;
-      deepLink = `/resale/${data.id}`;
-      image = data.image_url || "";
+      body = `${text(data, "title", "Used Item")} - Get it before it's gone!`;
+      deepLink = `/resale/${text(data, "id")}`;
+      image = text(data, "image_url");
       break;
     case "updates":
       title = "City Update! 📢";
-      body = data.title || "New notice from administration";
-      deepLink = `/updates/${data.id}`;
-      image = data.image || "";
+      body = text(data, "title", "New notice from administration");
+      deepLink = `/updates/${text(data, "id")}`;
+      image = text(data, "image");
       break;
     case "products":
       title = "New Product Added! 🛍️";
-      body = `${data.name || "Product"} is now available at ${data.price || "great pricing"}`;
-      deepLink = data.business_id ? `/shops/${data.business_id}` : "/";
-      image = data.image_url || "";
+      body = `${text(data, "name", "Product")} is now available at ${text(data, "price", "great pricing")}`;
+      deepLink = text(data, "business_id") ? `/shops/${text(data, "business_id")}` : "/";
+      image = text(data, "image_url");
       break;
     default:
       return;
@@ -198,10 +207,12 @@ export async function triggerAutoNotification(table: string, data: any) {
       .select()
       .single();
 
-    // 2. Fetch FCM device tokens
-    const { data: tokens } = await supabase
-      .from("user_fcm_tokens")
-      .select("fcm_token");
+    // 2. Fetch FCM device tokens, including anonymous app installs.
+    const [{ data: userTokens }, { data: deviceTokens }] = await Promise.all([
+      supabase.from("user_fcm_tokens").select("fcm_token"),
+      supabase.from("device_fcm_tokens").select("fcm_token"),
+    ]);
+    const tokens = [...(userTokens ?? []), ...(deviceTokens ?? [])];
 
     if (tokens && tokens.length > 0) {
       const { getFirebaseMessaging, getFirebaseConfigError } = await import("@/lib/firebase-admin");
