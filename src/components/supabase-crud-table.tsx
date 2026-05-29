@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/preserve-manual-memoization, react-hooks/set-state-in-effect */
+
 import { useCallback, useEffect, useState, useMemo } from "react";
 import type { AdminTableConfig } from "@/lib/admin-tables";
 import { SendNotificationButton } from "./send-notification-button";
@@ -9,10 +11,48 @@ type EditableRow = Record<string, string | boolean>;
 type Option = { value: string; label: string };
 type OptionMap = Record<string, Option[]>;
 
+function nestedValue(row: Row, key: string) {
+  if (!key.includes(".")) return row[key];
+  return key.split(".").reduce<unknown>((current, part) => {
+    if (current && typeof current === "object") {
+      return (current as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, row);
+}
+
+function assignNested(payload: Record<string, unknown>, key: string, value: unknown) {
+  const parts = key.split(".");
+  const root = parts.shift();
+  if (!root) return;
+  if (parts.length === 0) {
+    payload[root] = value;
+    return;
+  }
+  const existing = payload[root];
+  const target =
+    existing && typeof existing === "object" && !Array.isArray(existing)
+      ? (existing as Record<string, unknown>)
+      : {};
+  let cursor = target;
+  parts.forEach((part, index) => {
+    if (index === parts.length - 1) {
+      cursor[part] = value;
+      return;
+    }
+    const next = cursor[part];
+    if (!next || typeof next !== "object" || Array.isArray(next)) {
+      cursor[part] = {};
+    }
+    cursor = cursor[part] as Record<string, unknown>;
+  });
+  payload[root] = target;
+}
+
 function createEditableRow(config: AdminTableConfig, row: Row): EditableRow {
   const editable: EditableRow = {};
   config.columns.forEach((column) => {
-    const value = row[column.key];
+    const value = nestedValue(row, column.key);
     if (column.type === "date") {
       editable[column.key] = value === null || value === undefined ? "" : String(value).slice(0, 10);
     } else if (column.type === "json") {
@@ -204,32 +244,39 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     config.columns.forEach((col) => {
       const raw = values[col.key];
       if (raw === undefined) return;
+      const write = (value: unknown) => {
+        if (col.key.includes(".")) assignNested(payload, col.key, value);
+        else payload[col.key] = value;
+      };
       
       if (col.optionSource === "businesses" && raw === "__manual__") {
-        payload[col.key] = null;
+        write(null);
         const manualName = values[`${col.key}_manual_name`] || "";
         if (manualName) {
           metaObj.business_name = manualName;
         }
       } else if (raw === "") {
-        payload[col.key] = null;
+        write(null);
       } else if (col.type === "json") {
         try {
-          payload[col.key] = JSON.parse(String(raw));
+          write(JSON.parse(String(raw)));
         } catch {
-          payload[col.key] = String(raw);
+          write(String(raw));
         }
       } else if (col.type === "date") {
-        payload[col.key] = String(raw);
+        write(String(raw));
       } else if (col.type === "boolean") {
-        payload[col.key] = Boolean(raw);
+        write(Boolean(raw));
       } else {
-        payload[col.key] = raw;
+        write(raw);
       }
     });
 
     if (Object.keys(metaObj).length > 0) {
-      payload['meta'] = metaObj;
+      payload['meta'] = {
+        ...((payload['meta'] as Record<string, unknown> | undefined) ?? {}),
+        ...metaObj,
+      };
     }
 
     if (config.approveField && values[config.approveField] !== undefined) payload[config.approveField] = values[config.approveField];
@@ -263,7 +310,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     const csvContent = filteredAndSortedRows.map((row) =>
       config.columns
         .map((c) => {
-          const val = row[c.key];
+          const val = nestedValue(row, c.key);
           const str = val === null || val === undefined ? "" : String(val);
           return `"${str.replace(/"/g, '""')}"`;
         })

@@ -82,6 +82,17 @@ export async function GET() {
   ];
 
   const activeCategoryRows = categoryRows.length > 0 ? categoryRows : defaultCategoryRows;
+  const topLevelCategories = activeCategoryRows.filter((row) => !row.parent_key);
+  const childCategories = activeCategoryRows.filter((row) => Boolean(row.parent_key));
+  const scoped = (scope: string, rows = activeCategoryRows) =>
+    rows.filter((row) => row.scope === scope || row.scope === "global");
+  const toOptions = (rows: typeof activeCategoryRows) =>
+    uniqueOptions(
+      rows.map((row) => ({
+        value: row.key,
+        label: row.label ?? row.key,
+      })),
+    );
 
   return NextResponse.json({
     categoryLabels: uniqueOptions(
@@ -96,6 +107,10 @@ export async function GET() {
         label: `${row.label ?? row.key}${row.parent_key ? ` / ${row.parent_key}` : ""}`,
       })),
     ),
+    businessCategoryLabels: toOptions(scoped("businesses", topLevelCategories)),
+    businessSubcategoryLabels: toOptions(scoped("businesses", childCategories)),
+    serviceCategoryLabels: toOptions(scoped("services", topLevelCategories)),
+    serviceSubcategoryLabels: toOptions(scoped("services", childCategories)),
     serviceCategories: uniqueOptions(
       activeCategoryRows
         .filter((row) => row.scope === "services" || row.scope === "global")

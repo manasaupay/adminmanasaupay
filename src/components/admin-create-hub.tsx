@@ -28,6 +28,34 @@ function createBlankRow(config: AdminTableConfig): EditableRow {
   return row;
 }
 
+function assignNested(payload: Record<string, unknown>, key: string, value: unknown) {
+  const parts = key.split(".");
+  const root = parts.shift();
+  if (!root) return;
+  if (parts.length === 0) {
+    payload[root] = value;
+    return;
+  }
+  const existing = payload[root];
+  const target =
+    existing && typeof existing === "object" && !Array.isArray(existing)
+      ? (existing as Record<string, unknown>)
+      : {};
+  let cursor = target;
+  parts.forEach((part, index) => {
+    if (index === parts.length - 1) {
+      cursor[part] = value;
+      return;
+    }
+    const next = cursor[part];
+    if (!next || typeof next !== "object" || Array.isArray(next)) {
+      cursor[part] = {};
+    }
+    cursor = cursor[part] as Record<string, unknown>;
+  });
+  payload[root] = target;
+}
+
 function preparePayload(config: AdminTableConfig, values: EditableRow) {
   const payload: Record<string, unknown> = {};
   
@@ -46,28 +74,35 @@ function preparePayload(config: AdminTableConfig, values: EditableRow) {
   config.columns.forEach((col) => {
     const raw = values[col.key];
     if (raw === undefined || raw === "") return;
+    const write = (value: unknown) => {
+      if (col.key.includes(".")) assignNested(payload, col.key, value);
+      else payload[col.key] = value;
+    };
     
     if (col.optionSource === "businesses" && raw === "__manual__") {
-      payload[col.key] = null;
+      write(null);
       const manualName = values[`${col.key}_manual_name`] || "";
       if (manualName) {
         metaObj.business_name = manualName;
       }
     } else if (col.type === "json") {
       try {
-        payload[col.key] = JSON.parse(String(raw));
+        write(JSON.parse(String(raw)));
       } catch {
-        payload[col.key] = String(raw);
+        write(String(raw));
       }
     } else if (col.type === "boolean") {
-      payload[col.key] = Boolean(raw);
+      write(Boolean(raw));
     } else {
-      payload[col.key] = raw;
+      write(raw);
     }
   });
 
   if (Object.keys(metaObj).length > 0) {
-    payload['meta'] = metaObj;
+    payload['meta'] = {
+      ...((payload['meta'] as Record<string, unknown> | undefined) ?? {}),
+      ...metaObj,
+    };
   }
 
   if (config.approveField && values[config.approveField] !== undefined) payload[config.approveField] = values[config.approveField];

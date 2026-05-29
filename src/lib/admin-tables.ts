@@ -35,6 +35,10 @@ export type AdminColumnType =
 export type AdminOptionSource =
   | "categoryLabels"
   | "categoryKeys"
+  | "businessCategoryLabels"
+  | "businessSubcategoryLabels"
+  | "serviceCategoryLabels"
+  | "serviceSubcategoryLabels"
   | "businesses"
   | "users"
   | "chatThreads";
@@ -100,7 +104,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "role", label: "Role", options: ["user", "business", "service_provider", "auto_driver", "admin"], type: "enum" },
       { key: "is_verified", label: "Verified", type: "boolean" },
       { key: "is_blocked", label: "Blocked", type: "boolean" },
-      { key: "meta", label: "Activity / Meta (JSON)", type: "json" },
+      { key: "meta.notes", label: "Admin Notes" },
     ],
   },
   businesses: {
@@ -113,8 +117,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "name", label: "Name" },
       { key: "owner_id", label: "Owner", optionSource: "users" },
-      { key: "category", label: "Category", optionSource: "categoryLabels" },
-      { key: "subcategory", label: "Subcategory", optionSource: "categoryLabels" },
+      { key: "category", label: "Category", optionSource: "businessCategoryLabels" },
+      { key: "subcategory", label: "Subcategory", optionSource: "businessSubcategoryLabels" },
       { key: "phone", label: "Phone" },
       { key: "whatsapp", label: "WhatsApp" },
       { key: "cover_image", label: "Cover Image", type: "image" },
@@ -122,7 +126,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "is_verified", label: "Verified", type: "boolean" },
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
       { key: "priority", label: "Priority" },
-      { key: "meta", label: "Profile Meta (JSON)", type: "json" },
+      { key: "meta.tags", label: "Search Tags" },
+      { key: "meta.notes", label: "Admin Notes" },
     ],
   },
   services: {
@@ -135,14 +140,15 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "name", label: "Name" },
       { key: "provider_id", label: "Provider", optionSource: "users" },
-      { key: "category", label: "Category", optionSource: "categoryLabels" },
-      { key: "subcategory", label: "Subcategory", optionSource: "categoryLabels" },
+      { key: "category", label: "Category", optionSource: "serviceCategoryLabels" },
+      { key: "subcategory", label: "Subcategory", optionSource: "serviceSubcategoryLabels" },
       { key: "contact", label: "Contact" },
       { key: "whatsapp", label: "WhatsApp" },
       { key: "area", label: "Area" },
       { key: "is_verified", label: "Verified", type: "boolean" },
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
-      { key: "meta", label: "Service Meta (JSON)", type: "json" },
+      { key: "meta.tags", label: "Search Tags" },
+      { key: "meta.notes", label: "Admin Notes" },
     ],
   },
   auto_drivers: {
@@ -159,7 +165,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "vehicle_number", label: "Vehicle" },
       { key: "area", label: "Area" },
       { key: "whatsapp", label: "WhatsApp" },
-      { key: "meta", label: "Driver Meta (JSON)", type: "json" },
+      { key: "meta.notes", label: "Admin Notes" },
     ],
   },
   jobs: {
@@ -177,7 +183,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "contact", label: "Contact" },
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
       { key: "application_link", label: "Apply Link" },
-      { key: "meta", label: "Job Meta (JSON)", type: "json" },
+      { key: "meta.business_name", label: "Business Name Override" },
+      { key: "meta.notes", label: "Admin Notes" },
     ],
   },
   categories: {
@@ -195,7 +202,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "banner_url", label: "Banner", type: "image" },
       { key: "color", label: "Color" },
       { key: "sort_order", label: "Sort Order" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.subtitle", label: "Subtitle" },
+      { key: "meta.keywords", label: "Keywords" },
     ],
   },
   ads: {
@@ -215,7 +223,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "priority", label: "Priority" },
       { key: "start_date", label: "Start", type: "date" },
       { key: "expiry_date", label: "End", type: "date" },
-      { key: "meta", label: "Targeting / Meta (JSON)", type: "json" },
+      { key: "meta.audience", label: "Audience Note" },
     ],
   },
   popup_ads: {
@@ -250,7 +258,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "priority", label: "Priority" },
       { key: "start_date", label: "Start", type: "date" },
       { key: "end_date", label: "End", type: "date" },
-      { key: "meta", label: "Campaign Meta (JSON)", type: "json" },
+      { key: "meta.campaign_name", label: "Campaign Name" },
     ],
   },
   notifications: {
@@ -264,7 +272,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "image", label: "Image", type: "image" },
       { key: "audience", label: "Audience", options: ["all", "businesses", "service_providers", "auto_drivers", "selected", "categories", "users"], type: "enum" },
       { key: "deep_link", label: "Deep Link" },
-      { key: "target_meta", label: "Targets (JSON)", type: "json" },
+      { key: "target_meta.category_keys", label: "Target Category Keys" },
+      { key: "target_meta.user_ids", label: "Target User IDs" },
     ],
   },
   updates: {
@@ -279,7 +288,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "content", label: "Content" },
       { key: "image", label: "Image", type: "image" },
       { key: "scheduled_at", label: "Schedule", type: "date" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.priority_note", label: "Priority Note" },
     ],
   },
   news: {
@@ -296,7 +305,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "image_url", label: "Image", type: "image" },
       { key: "published_at", label: "Publish Date", type: "date" },
       { key: "is_trending", label: "Trending", type: "boolean" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.source", label: "Source" },
     ],
   },
   events: {
@@ -313,7 +322,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "banner_url", label: "Banner", type: "image" },
       { key: "event_date", label: "Event Date", type: "date" },
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.organizer_phone", label: "Organizer Phone" },
     ],
   },
   offers: {
@@ -331,7 +340,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
       { key: "start_date", label: "Start", type: "date" },
       { key: "end_date", label: "End", type: "date" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.terms", label: "Terms" },
     ],
   },
   properties: {
@@ -350,7 +359,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "contact", label: "Contact" },
       { key: "image_url", label: "Image", type: "image" },
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.landmark", label: "Landmark" },
     ],
   },
   resale: {
@@ -369,7 +378,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "contact", label: "Contact" },
       { key: "image_url", label: "Image", type: "image" },
       { key: "is_sponsored", label: "Sponsored", type: "boolean" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.condition", label: "Condition" },
     ],
   },
   reviews: {
@@ -383,7 +392,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "target_id", label: "Target ID" },
       { key: "rating", label: "Rating" },
       { key: "comment", label: "Review" },
-      { key: "image_urls", label: "Images (JSON)", type: "json" },
+      { key: "image_urls", label: "Image URLs" },
       { key: "business_reply", label: "Business Reply" },
       { key: "is_verified_reviewer", label: "Verified Reviewer", type: "boolean" },
       { key: "reported_count", label: "Reports" },
@@ -399,7 +408,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "user_id", label: "User", optionSource: "users" },
       { key: "target_type", label: "Target", options: ["business", "service", "creator", "category", "property"], type: "enum" },
       { key: "target_id", label: "Target ID" },
-      { key: "notification_preferences", label: "Notification Preferences (JSON)", type: "json" },
+      { key: "notification_preferences.channels", label: "Notification Channels" },
     ],
   },
   analytics: {
@@ -412,7 +421,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "entity_type", label: "Entity Type" },
       { key: "entity_id", label: "Entity ID" },
       { key: "user_id", label: "User", optionSource: "users" },
-      { key: "metadata", label: "Metadata (JSON)", type: "json" },
+      { key: "metadata.screen", label: "Screen" },
+      { key: "metadata.source", label: "Source" },
     ],
   },
   call_sessions: {
@@ -426,7 +436,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "target_name", label: "Target Name" },
       { key: "target_phone", label: "Phone" },
       { key: "status", label: "Status", options: ["calling", "ringing", "accepted", "missed", "ended", "declined"], type: "enum" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.notes", label: "Call Notes" },
     ],
   },
   chat_threads: {
@@ -462,10 +472,10 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
     columns: [
       { key: "key", label: "Key" },
       { key: "setting_type", label: "Value Type", options: ["string", "boolean", "number", "json", "url", "color"], type: "enum" },
-      { key: "group_name", label: "Group", options: ["general", "app", "branding", "ads", "notifications", "businesses", "services", "security"], type: "enum" },
+      { key: "group_name", label: "Group", options: ["general", "app", "branding", "ads", "notifications", "businesses", "services", "security", "ui", "features"], type: "enum" },
       { key: "value", label: "Value" },
       { key: "description", label: "Description" },
-      { key: "meta", label: "Meta (JSON)", type: "json" },
+      { key: "meta.help_text", label: "Help Text" },
     ],
   },
   products: {
@@ -480,7 +490,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "description", label: "Description" },
       { key: "price", label: "Price" },
       { key: "image_url", label: "Image", type: "image" },
-      { key: "meta", label: "Product Meta (JSON)", type: "json" },
+      { key: "meta.sku", label: "SKU" },
+      { key: "meta.stock", label: "Stock" },
     ],
   },
 };
