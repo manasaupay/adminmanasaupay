@@ -46,6 +46,9 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     setMessage("");
     const { error } = await supabase.auth.signInWithOtp({
       email: SUPPORT_EMAIL,
+      options: {
+        shouldCreateUser: false,
+      },
     });
     setBusy(false);
     if (error) {
@@ -53,7 +56,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
     setState("otp_sent");
-    setMessage("OTP sent. Please check the admin inbox.");
+    setMessage("OTP code sent. Please enter the code from the admin inbox.");
   }
 
   async function verifyOtp() {
@@ -78,19 +81,25 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-1 items-center justify-center bg-slate-50 p-4">
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-600">Secure Admin</p>
-        <h1 className="mt-2 text-2xl font-black text-slate-900">Manasa Upay Console</h1>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-600">
+          Secure Admin
+        </p>
+        <h1 className="mt-2 text-2xl font-black text-slate-900">
+          Manasa Upay Console
+        </h1>
         <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-          Admin access is protected with a Supabase one-time email code.
+          Admin access is protected with a Supabase one-time email OTP.
         </p>
 
         <div className="mt-6 space-y-3">
           {state === "otp_sent" && (
             <input
               value={token}
-              onChange={(event) => setToken(event.target.value.replace(/\D/g, "").slice(0, 8))}
+              onChange={(event) =>
+                setToken(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
               inputMode="numeric"
-              placeholder="Enter OTP"
+              placeholder="Enter 6-digit OTP"
               className="w-full rounded-xl border border-slate-200 px-4 py-3 text-center text-lg font-black tracking-[0.3em] text-slate-900 outline-none focus:border-teal-500"
             />
           )}
@@ -100,7 +109,13 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
             onClick={state === "otp_sent" ? verifyOtp : sendOtp}
             className="w-full rounded-xl bg-teal-600 px-4 py-3 text-sm font-black text-white transition hover:bg-teal-700 disabled:opacity-50"
           >
-            {state === "checking" ? "Checking..." : busy ? "Please wait..." : state === "otp_sent" ? "Verify OTP" : "Send Email OTP"}
+            {state === "checking"
+              ? "Checking..."
+              : busy
+                ? "Please wait..."
+                : state === "otp_sent"
+                  ? "Verify OTP"
+                  : "Send Email OTP"}
           </button>
         </div>
 
@@ -120,7 +135,12 @@ function installAuthFetch(accessToken: string) {
   win.__adminFetchPatched = true;
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
     if (url.startsWith("/api/")) {
       const headers = new Headers(init.headers);
       headers.set("authorization", `Bearer ${accessToken}`);
