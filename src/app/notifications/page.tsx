@@ -146,11 +146,11 @@ function NotificationsForm() {
         <div>
           <label className="mb-1 block text-sm font-medium">Deep link URL</label>
           <input
-            type="url"
+            type="text"
             value={deepLink}
             onChange={(event) => setDeepLink(event.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2"
-            placeholder="https://manasaupay.vercel.app/business/12"
+            placeholder="/jobs/ID or https://manasaupay.vercel.app/jobs/ID"
           />
         </div>
         <button
