@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminRequest } from "@/lib/admin-auth";
 import { getAdminClient, getAdminConfigError } from "@/lib/supabase/admin";
 import { triggerAutoNotification } from "../admin/[table]/route";
 
@@ -31,6 +32,8 @@ const assignmentConfig = {
 } as const;
 
 export async function POST(req: NextRequest) {
+  const adminAuthError = await requireAdminRequest(req);
+  if (adminAuthError) return adminAuthError;
   const configError = getAdminConfigError();
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });
@@ -245,7 +248,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     // Rollback operations in case of failures
     if (assignment && isCreateNew && finalTargetId) {
       await supabase.from(assignment.table).delete().eq("id", finalTargetId);
@@ -253,7 +256,10 @@ export async function POST(req: NextRequest) {
     await supabase.from("users").delete().eq("id", authData.user.id);
     await supabase.auth.admin.deleteUser(authData.user.id);
 
-    return NextResponse.json({ error: e.message || "Failed to create partner." }, { status: 500 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to create partner." },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({

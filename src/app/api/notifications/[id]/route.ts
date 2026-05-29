@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminRequest } from "@/lib/admin-auth";
 import { getAdminClient, getAdminConfigError } from "@/lib/supabase/admin";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const authError = await requireAdminRequest(req);
+  if (authError) return authError;
   const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Notification ID required" }, { status: 400 });

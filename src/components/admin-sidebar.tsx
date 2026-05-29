@@ -8,7 +8,15 @@ import { NAV_GROUPS } from "@/lib/constants";
 export function AdminSidebar() {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
-  const [env, setEnv] = useState<"production" | "staging" | "development">("production");
+  type AdminEnv = "production" | "staging" | "development";
+  const [env, setEnv] = useState<AdminEnv>("production");
+  const mobileItems = useMemo(
+    () =>
+      NAV_GROUPS.flatMap((group) =>
+        group.items.map((item) => ({ href: item.href, label: item.label })),
+      ),
+    [],
+  );
 
   // Dynamic search filtering
   const filteredGroups = useMemo(() => {
@@ -25,6 +33,27 @@ export function AdminSidebar() {
   }, [searchQuery]);
 
   return (
+    <>
+    <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur lg:hidden">
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {mobileItems.map((item) => {
+          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`shrink-0 rounded-lg border px-3 py-2 text-[11px] font-black ${
+                active
+                  ? "border-teal-200 bg-teal-50 text-teal-700"
+                  : "border-slate-200 bg-white text-slate-600"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
     <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-200 bg-white shadow-[1px_0_5px_rgba(0,0,0,0.01)] lg:flex">
       {/* Brand Header */}
       <div className="border-b border-slate-100 px-6 py-5 flex items-center justify-between">
@@ -123,7 +152,7 @@ export function AdminSidebar() {
           </div>
           <select
             value={env}
-            onChange={(e) => setEnv(e.target.value as any)}
+            onChange={(e) => setEnv(e.target.value as AdminEnv)}
             className="text-[10px] font-black uppercase text-slate-700 tracking-wide bg-transparent outline-none cursor-pointer"
           >
             <option value="production">Production</option>
@@ -145,6 +174,7 @@ export function AdminSidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }
 

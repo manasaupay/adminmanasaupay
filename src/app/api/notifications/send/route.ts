@@ -5,6 +5,7 @@ import {
   getFirebaseConfigError,
   getFirebaseMessaging,
 } from "@/lib/firebase-admin";
+import { requireAdminRequest } from "@/lib/admin-auth";
 import { getAdminClient, getAdminConfigError } from "@/lib/supabase/admin";
 
 type Audience =
@@ -35,6 +36,8 @@ const roleByAudience: Partial<Record<Audience, string>> = {
 };
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAdminRequest(req);
+  if (authError) return authError;
   const supabaseError = getAdminConfigError();
   if (supabaseError) {
     return NextResponse.json({ error: supabaseError }, { status: 503 });

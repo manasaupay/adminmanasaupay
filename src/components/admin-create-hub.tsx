@@ -8,12 +8,12 @@ type Option = { value: string; label: string };
 type OptionMap = Record<string, Option[]>;
 
 const createGroups: { title: string; keys: AdminTableKey[] }[] = [
-  { title: "Catalog & Structure", keys: ["categories", "businesses", "services", "auto_drivers"] },
+  { title: "Catalog & Structure", keys: ["categories", "businesses", "services", "products", "auto_drivers"] },
   { title: "Listings & Jobs", keys: ["jobs", "properties", "resale"] },
   { title: "Engagement Content", keys: ["offers", "news", "events", "updates"] },
   { title: "Advertisements", keys: ["ads", "popup_ads", "sponsored_shops"] },
   { title: "Platform Comms", keys: ["notifications", "chat_messages"] },
-  { title: "System", keys: ["settings"] },
+  { title: "System", keys: ["settings", "likes", "follows"] },
 ];
 
 function createBlankRow(config: AdminTableConfig): EditableRow {

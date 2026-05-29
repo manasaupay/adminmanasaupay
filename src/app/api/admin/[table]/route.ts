@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminTable } from "@/lib/admin-tables";
+import { requireAdminRequest } from "@/lib/admin-auth";
 import { getAdminClient, getAdminConfigError } from "@/lib/supabase/admin";
 
 type Params = { params: Promise<{ table: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
+  const authError = await requireAdminRequest(_req);
+  if (authError) return authError;
   const { table } = await params;
   if (!isAdminTable(table)) {
     return NextResponse.json({ error: "Invalid table" }, { status: 400 });
@@ -24,6 +27,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const authError = await requireAdminRequest(req);
+  if (authError) return authError;
   const { table } = await params;
   if (!isAdminTable(table)) {
     return NextResponse.json({ error: "Invalid table" }, { status: 400 });
@@ -60,6 +65,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
+  const authError = await requireAdminRequest(req);
+  if (authError) return authError;
   const { table } = await params;
   if (!isAdminTable(table)) {
     return NextResponse.json({ error: "Invalid table" }, { status: 400 });
@@ -83,6 +90,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
+  const authError = await requireAdminRequest(req);
+  if (authError) return authError;
   const { table } = await params;
   if (!isAdminTable(table)) {
     return NextResponse.json({ error: "Invalid table" }, { status: 400 });

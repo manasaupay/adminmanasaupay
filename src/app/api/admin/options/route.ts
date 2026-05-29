@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdminRequest } from "@/lib/admin-auth";
 import { getAdminClient, getAdminConfigError } from "@/lib/supabase/admin";
 
 type Option = { value: string; label: string };
@@ -12,7 +13,9 @@ function uniqueOptions(options: Option[]) {
   });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = await requireAdminRequest(req);
+  if (authError) return authError;
   const configError = getAdminConfigError();
   if (configError) {
     return NextResponse.json({ error: configError }, { status: 503 });

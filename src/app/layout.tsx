@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { AdminAuthGate } from "@/components/admin-auth-gate";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { APP_NAME } from "@/lib/constants";
 
@@ -21,17 +22,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geist.variable} h-full`}>
-      <body className="flex min-h-full bg-slate-50 text-slate-900 antialiased selection:bg-teal-100 selection:text-teal-900">
-        <AdminSidebar />
-        <main className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm backdrop-blur-md lg:hidden">
-            <p className="font-bold text-teal-700">Manasa Upay Console</p>
-            <p className="text-xs text-slate-500 mt-1">Please use a wider screen or desktop view for the full operations suite.</p>
+      <body className="min-h-full bg-slate-50 text-slate-900 antialiased selection:bg-teal-100 selection:text-teal-900">
+        <AdminAuthGate>
+          <div className="flex min-h-screen flex-col lg:flex-row">
+            <AdminSidebar />
+            <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6 lg:p-8">
+              <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:hidden">
+                <p className="font-bold text-teal-700">Manasa Upay Console</p>
+                <p className="mt-1 text-xs text-slate-500">Mobile controls are enabled. Use the quick directory below for navigation.</p>
+              </div>
+              <div className="mx-auto w-full max-w-7xl">{children}</div>
+            </main>
           </div>
-          <div className="mx-auto w-full max-w-7xl">
-            {children}
-          </div>
-        </main>
+        </AdminAuthGate>
       </body>
     </html>
   );

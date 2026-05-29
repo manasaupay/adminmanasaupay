@@ -20,6 +20,7 @@ export const NAV_ITEMS = [
   { href: "/news", label: "News" },
   { href: "/events", label: "Events" },
   { href: "/offers", label: "Offers" },
+  { href: "/products", label: "Products" },
   { href: "/properties", label: "Properties" },
   { href: "/resale", label: "Resale" },
   { href: "/reviews", label: "Reviews" },
@@ -42,6 +43,7 @@ export const NAV_GROUPS = [
     title: "Hyperlocal Directory",
     items: [
       { href: "/businesses", label: "Shops & Businesses" },
+      { href: "/products", label: "Products" },
       { href: "/services", label: "Local Services" },
       { href: "/auto-drivers", label: "Auto Drivers" },
       { href: "/jobs", label: "Job Openings" },
@@ -67,6 +69,7 @@ export const NAV_GROUPS = [
       { href: "/reviews", label: "Reviews & Ratings" },
       { href: "/calls", label: "Call History" },
       { href: "/chats", label: "Chat Support" },
+      { href: "/follows", label: "Follows" },
       { href: "/settings", label: "Platform Settings" },
     ],
   },
