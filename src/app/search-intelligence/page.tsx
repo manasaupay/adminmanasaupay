@@ -213,16 +213,43 @@ export default function SearchIntelligencePage() {
 
           {/* Failed Searches Analytics Side-Widget */}
           <section className="space-y-4">
-            <div className="glass-card rounded-3xl border border-slate-150 bg-gradient-to-tr from-slate-900 to-slate-950 p-5 text-white shadow-lg space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 h-32 w-32 bg-red-500/10 rounded-full blur-2xl" />
+            <div className="glass-card rounded-3xl border border-slate-800 bg-gradient-to-tr from-slate-900 to-slate-950 p-5 text-white shadow-xl space-y-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 h-32 w-32 bg-rose-500/10 rounded-full blur-2xl" />
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-red-400">Failed Search Warning</h3>
-                <p className="text-[10px] text-slate-350 leading-relaxed font-semibold mt-1">
-                  Admins see missed local demands instantly. For example, when users search for **"PG Room"** and get 0 results, you can immediately create a **"PG Rentals"** category with 0 developer support to capture immediate traffic!
+                <h3 className="text-xs font-black uppercase tracking-wider text-rose-400">Pure Market Opportunities</h3>
+                <p className="text-[10px] text-slate-300 leading-relaxed font-semibold mt-1">
+                  These keywords were searched by customers in Manasa, but returned **0 results**. They represent absolute unmet local demand!
                 </p>
               </div>
-              <div className="p-3 bg-red-950/40 border border-red-900 rounded-xl">
-                <p className="text-[9px] font-black text-red-405 uppercase">Missed Demand Summary</p>
+
+              {/* Dynamic Opportunities List */}
+              <div className="space-y-2">
+                <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Top Missed Demands</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                  {searches.filter((s) => s.resultsCount === 0).slice(0, 5).map((s) => (
+                    <div key={s.id} className="p-3 bg-slate-800/40 border border-slate-700/60 rounded-xl flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black text-white">{s.query}</p>
+                        <p className="text-[8px] text-rose-400 font-bold uppercase mt-0.5">{s.volume} direct searches</p>
+                      </div>
+                      <button
+                        onClick={() => handleCreateCategory(s.query)}
+                        className="rounded px-2 py-1 text-[8px] font-black uppercase text-teal-350 bg-teal-950 border border-teal-900 hover:bg-teal-900 transition-all cursor-pointer"
+                      >
+                        ➕ Add
+                      </button>
+                    </div>
+                  ))}
+                  {searches.filter((s) => s.resultsCount === 0).length === 0 && (
+                    <p className="text-[10px] text-slate-400 font-bold py-4 text-center">
+                      No failed searches found. Great job!
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 bg-red-950/40 border border-red-900/60 rounded-xl">
+                <p className="text-[9px] font-black text-rose-400 uppercase">Missed Demand Summary</p>
                 <p className="text-[9px] text-slate-350 leading-relaxed mt-1 font-semibold">
                   Failed searches represent pure market opportunities inside the Manasa district app.
                 </p>

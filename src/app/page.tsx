@@ -305,6 +305,33 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* Missed Demand Opportunities Banner */}
+      <section className="glass-card rounded-3xl p-6 bg-gradient-to-tr from-slate-900 via-slate-950 to-teal-950 border border-slate-800 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 h-40 w-40 bg-teal-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-32 w-32 bg-rose-500/5 rounded-full blur-2xl" />
+        <div className="space-y-2 relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">
+              Pure Market Opportunities
+            </span>
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-[9px] font-black uppercase tracking-wider text-rose-400">Missed Demand Summary</span>
+          </div>
+          <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
+            Uncover Unmet Local Demands in Manasa
+          </h2>
+          <p className="text-xs text-slate-300 font-medium max-w-xl leading-relaxed">
+            Every failed search with 0 results represents direct consumer intent. Add categories instantly without any developer code to capture immediate traffic and local revenue!
+          </p>
+        </div>
+        <Link
+          href="/search-intelligence"
+          className="shrink-0 rounded-2xl bg-white px-5 py-3 text-xs font-black text-slate-900 shadow-lg hover:bg-slate-100 active:scale-95 transition-all text-center relative z-10"
+        >
+          🔍 View Failed Searches (Missed Demand)
+        </Link>
+      </section>
+
       {/* Core Split: Revenue Snapshot & Activity Feed */}
       <div className="grid gap-6 lg:grid-cols-3">
         

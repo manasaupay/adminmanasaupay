@@ -272,7 +272,14 @@ export function AdminCreateHub() {
 
           {/* Render inputs */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {config.columns.map((column) => (
+            {config.columns
+              .filter((column) => {
+                if (selected === "popup_ads" && column.key === "frequency" && values.trigger_type !== "timed") {
+                  return false;
+                }
+                return true;
+              })
+              .map((column) => (
               <label key={column.key} className="block space-y-1.5">
                 <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">
                   {column.label}
@@ -317,6 +324,45 @@ export function AdminCreateHub() {
                     placeholder='{"key": "value"}'
                     className="w-full min-h-24 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 outline-none transition-all"
                   />
+                ) : selected === "popup_ads" && column.key === "frequency" && values.trigger_type === "timed" ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Time value"
+                      value={(() => {
+                        const freq = String(values[column.key] ?? "");
+                        const match = freq.match(/^(\d+)/);
+                        return match ? match[1] : "";
+                      })()}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const freq = String(values[column.key] ?? "");
+                        const unitMatch = freq.match(/([a-zA-Z]+)$/);
+                        const unit = unitMatch ? unitMatch[1] : "s";
+                        update(column.key, val ? `${val}${unit}` : "");
+                      }}
+                      className="w-2/3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 outline-none transition-all"
+                    />
+                    <select
+                      value={(() => {
+                        const freq = String(values[column.key] ?? "");
+                        const match = freq.match(/([a-zA-Z]+)$/);
+                        return match ? match[1] : "s";
+                      })()}
+                      onChange={(e) => {
+                        const unit = e.target.value;
+                        const freq = String(values[column.key] ?? "");
+                        const valMatch = freq.match(/^(\d+)/);
+                        const val = valMatch ? valMatch[1] : "30";
+                        update(column.key, `${val}${unit}`);
+                      }}
+                      className="w-1/3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-800 outline-none focus:border-teal-500/40 cursor-pointer font-bold"
+                    >
+                      <option value="s">sec</option>
+                      <option value="h">hr</option>
+                    </select>
+                  </div>
                 ) : (
                   <input
                     type={column.type === "date" ? "date" : "text"}

@@ -30,6 +30,9 @@ export default function AdsOsPage() {
     start_date: "",
     end_date: "",
     image_url: "",
+    trigger_type: "app_open",
+    frequency_val: "30",
+    frequency_unit: "s",
   });
 
   const [campaignSuccess, setCampaignSuccess] = useState(false);
@@ -132,7 +135,8 @@ export default function AdsOsPage() {
         ? {
             title: form.title,
             image_url: form.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e",
-            trigger_type: "app_open",
+            trigger_type: form.trigger_type || "app_open",
+            frequency: form.trigger_type === "timed" ? `${form.frequency_val}${form.frequency_unit}` : null,
             active: true,
             start_at: form.start_date ? new Date(form.start_date).toISOString() : new Date().toISOString(),
             end_at: form.end_date ? new Date(form.end_date).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -158,7 +162,7 @@ export default function AdsOsPage() {
       if (!res.ok) throw new Error("Failed to insert dynamic ad unit");
 
       setCampaignSuccess(true);
-      setForm({ title: "", type: "slider", placement: "homepage", revenue: "5000", start_date: "", end_date: "", image_url: "" });
+      setForm({ title: "", type: "slider", placement: "homepage", revenue: "5000", start_date: "", end_date: "", image_url: "", trigger_type: "app_open", frequency_val: "30", frequency_unit: "s" });
       void loadData();
       setTimeout(() => setCampaignSuccess(false), 3000);
     } catch (err) {
@@ -341,6 +345,50 @@ export default function AdsOsPage() {
                       </select>
                     </div>
                   </div>
+
+                  {form.type === "popup" && (
+                    <div className="grid gap-4 sm:grid-cols-2 animate-fade-in border border-slate-100 p-4 rounded-2xl bg-slate-50/30">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">Trigger Event</label>
+                        <select
+                          value={form.trigger_type}
+                          onChange={(e) => setForm({ ...form, trigger_type: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-800 outline-none focus:border-teal-500 cursor-pointer font-bold"
+                        >
+                          <option value="app_open">On App Launch (app_open)</option>
+                          <option value="timed">Timed Interval (timed)</option>
+                        </select>
+                      </div>
+
+                      {form.trigger_type === "timed" ? (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">Interval Frequency</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              value={form.frequency_val}
+                              onChange={(e) => setForm({ ...form, frequency_val: e.target.value })}
+                              placeholder="30"
+                              className="w-2/3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 focus:border-teal-500 outline-none"
+                            />
+                            <select
+                              value={form.frequency_unit}
+                              onChange={(e) => setForm({ ...form, frequency_unit: e.target.value })}
+                              className="w-1/3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-800 outline-none focus:border-teal-500 cursor-pointer font-bold"
+                            >
+                              <option value="s">sec</option>
+                              <option value="h">hr</option>
+                            </select>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center pt-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Triggers immediately on app start
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="space-y-1">
