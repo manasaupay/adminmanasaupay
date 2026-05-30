@@ -8,7 +8,7 @@ type AuthState = "checking" | "signed_out" | "otp_sent" | "signed_in";
 
 const ADMIN_OTP_LENGTH = 8;
 const ADMIN_SESSION_MS = 60 * 60 * 1000;
-const OTP_RESEND_MS = 60 * 60 * 1000;
+const OTP_RESEND_MS = 30 * 1000;
 const ADMIN_LOGIN_AT_KEY = "manasa_admin_login_at";
 const ADMIN_OTP_SENT_AT_KEY = "manasa_admin_otp_sent_at";
 

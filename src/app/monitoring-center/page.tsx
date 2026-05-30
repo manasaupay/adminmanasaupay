@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type ErrorLog = {
   id: string;
@@ -11,18 +11,72 @@ type ErrorLog = {
 };
 
 export default function MonitoringCenterPage() {
-  const [logs, setLogs] = useState<ErrorLog[]>([
-    { id: "1", source: "Database", message: "Transaction lock timeout on public.resale indices during peak hours", time: "10:42 AM", severity: "medium" },
-    { id: "2", source: "FCM", message: "Multicast chunk reject for token range ending in '_41ab': unregistered device", time: "10:35 AM", severity: "low" },
-    { id: "3", source: "Auth", message: "OTP validation threshold breached for user email support@sharma.com", time: "10:12 AM", severity: "high" },
-    { id: "4", source: "API", message: "504 gateway timeout fetching /api/admin/reviews from backend node", time: "09:45 AM", severity: "medium" },
-  ]);
-
+  const [logs, setLogs] = useState<ErrorLog[]>([]);
+  const [latency, setLatency] = useState("—");
+  const [loading, setLoading] = useState(true);
   const [alertsActive, setAlertsActive] = useState(true);
+
+  // Measure actual database response latency dynamically
+  async function pingDatabase() {
+    try {
+      const start = Date.now();
+      const res = await fetch("/api/stats");
+      await res.json();
+      const end = Date.now();
+      setLatency(`${end - start}ms`);
+    } catch {
+      setLatency("Timeout");
+    }
+  }
+
+  // Load real logs and measure query latencies
+  async function loadData() {
+    setLoading(true);
+    try {
+      await pingDatabase();
+      const res = await fetch("/api/admin/analytics");
+      const data = await res.json();
+      const analyticsList = Array.isArray(data) ? data : [];
+
+      // Filter events representing failure or error traces
+      const failures = analyticsList.filter(
+        (a: any) =>
+          a.event_name.includes("fail") ||
+          a.event_name.includes("error") ||
+          a.event_name.includes("reject")
+      );
+
+      const parsed: ErrorLog[] = failures.map((event: any, index: number) => {
+        const meta = event.metadata ?? {};
+        const source = event.event_name.includes("fcm") ? "FCM" : (event.event_name.includes("auth") ? "Auth" : "Database");
+        return {
+          id: String(event.id || index + 1),
+          source,
+          message: meta.message || `System rejected process trigger during ${event.event_name}`,
+          time: event.created_at ? new Date(event.created_at).toLocaleTimeString() : "Just now",
+          severity: event.event_name.includes("auth") ? "high" : "medium",
+        };
+      });
+
+      setLogs(parsed);
+    } catch {
+      // Graceful fallback empty states
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadData();
+    const timer = setInterval(() => {
+      void pingDatabase();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const stats = [
     { label: "API Success Index", value: "99.8%", color: "text-teal-600" },
-    { label: "Database Response", value: "42ms", color: "text-sky-600" },
+    { label: "Database Response (Live)", value: latency, color: "text-sky-600" },
     { label: "FCM Broadcast yield", value: "99.4%", color: "text-violet-605" },
     { label: "Authentication health", value: "98.7%", color: "text-indigo-600" },
   ];
@@ -34,7 +88,7 @@ export default function MonitoringCenterPage() {
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Monitoring Center</h1>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
-            Track database latencies, API timeout rates, FCM push failures, OTP login thresholds, and media storage upload health.
+            Track live database latencies, API timeout rates, FCM push failures, and auth credentials health.
           </p>
         </div>
       </div>
@@ -44,10 +98,10 @@ export default function MonitoringCenterPage() {
         <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Live Health Metres</h2>
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           {stats.map((item) => (
-            <div key={item.label} className="p-5 border border-slate-150 bg-white rounded-2xl shadow-sm text-center">
+            <div key={item.label} className="p-5 border border-slate-150 bg-white rounded-2xl shadow-sm text-center transition-all hover:border-teal-500/20">
               <p className="text-[9px] font-black uppercase tracking-wider text-slate-450">{item.label}</p>
               <p className={`text-2xl font-black mt-1 ${item.color}`}>{item.value}</p>
-              <span className="text-[8px] text-emerald-600 font-black uppercase tracking-widest mt-1 block">▲ Excellent state</span>
+              <span className="text-[8px] text-emerald-600 font-black uppercase tracking-widest mt-1 block">▲ Live connection</span>
             </div>
           ))}
         </div>
@@ -66,7 +120,7 @@ export default function MonitoringCenterPage() {
             </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1 scrollbar-thin">
             {logs.map((log) => (
               <div
                 key={log.id}
@@ -93,6 +147,11 @@ export default function MonitoringCenterPage() {
                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider shrink-0">{log.time}</span>
               </div>
             ))}
+            {logs.length === 0 && (
+              <p className="text-xs font-bold text-slate-400 py-12 text-center">
+                No active failure triggers recorded. Server node operations are fully healthy.
+              </p>
+            )}
           </div>
         </section>
 

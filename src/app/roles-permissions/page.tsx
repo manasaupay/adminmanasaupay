@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type RolePermission = {
   module: string;
@@ -27,6 +27,27 @@ export default function RolesPermissionsPage() {
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load RBAC matrix from Supabase settings
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const configSetting = data.find((s: any) => s.key === "roles_permissions_config");
+          if (configSetting?.value) {
+            try {
+              const parsed = JSON.parse(configSetting.value);
+              if (Array.isArray(parsed)) setPermissions(parsed);
+            } catch {
+              // Ignore parse errors, use defaults
+            }
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const togglePermission = (idx: number, roleKey: keyof Omit<RolePermission, "module">) => {
     setPermissions((prev) =>
@@ -34,14 +55,41 @@ export default function RolesPermissionsPage() {
     );
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     setSaving(true);
     setSuccess(false);
-    setTimeout(() => {
-      setSaving(false);
+    setError(null);
+
+    const payloadValue = JSON.stringify(permissions);
+
+    try {
+      const resSettings = await fetch("/api/admin/settings");
+      const settingsList = await resSettings.json();
+      const layoutRow = Array.isArray(settingsList)
+        ? settingsList.find((s: any) => s.key === "roles_permissions_config")
+        : null;
+
+      const endpoint = "/api/admin/settings";
+      const method = layoutRow ? "PATCH" : "POST";
+      const body = layoutRow
+        ? { id: layoutRow.id, value: payloadValue }
+        : { key: "roles_permissions_config", setting_type: "json", group_name: "security", value: payloadValue, description: "Active dynamic role access matrices" };
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error("Failed to save matrix parameters");
+      
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error saving permissions configuration");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -58,7 +106,7 @@ export default function RolesPermissionsPage() {
           <button
             onClick={handleSaveChanges}
             disabled={saving}
-            className="rounded-xl bg-teal-600 px-5 py-3 text-xs font-black text-white hover:bg-teal-700 active:scale-95 transition-all shadow-md disabled:opacity-50"
+            className="rounded-xl bg-teal-600 px-5 py-3 text-xs font-black text-white hover:bg-teal-700 active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
           >
             {saving ? "Saving Matrix..." : "Save RBAC Matrix"}
           </button>
@@ -71,6 +119,15 @@ export default function RolesPermissionsPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           RBAC Matrix rules updated! Granular button visibilities and module handlers re-authenticated.
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-750 flex items-center gap-2 shadow-sm">
+          <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          {error}
         </div>
       )}
 
@@ -105,7 +162,7 @@ export default function RolesPermissionsPage() {
                       type="checkbox"
                       checked={row.superAdmin}
                       disabled
-                      className="h-4.5 w-4.5 rounded border-slate-300 text-teal-600 focus:ring-0 opacity-40"
+                      className="h-4.5 w-4.5 rounded border-slate-350 text-teal-600 focus:ring-0 opacity-40"
                     />
                   </td>
 
