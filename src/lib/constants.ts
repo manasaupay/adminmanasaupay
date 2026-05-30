@@ -37,40 +37,42 @@ export const NAV_GROUPS = [
     items: [
       { href: "/", label: "Operations Dashboard" },
       { href: "/add-new", label: "Create New Entry" },
+      { href: "/ai-assistant", label: "AI Operations Copilot" },
     ],
   },
   {
-    title: "Hyperlocal Directory",
+    title: "Content Engine",
     items: [
-      { href: "/businesses", label: "Shops & Businesses" },
-      { href: "/products", label: "Products" },
-      { href: "/services", label: "Local Services" },
-      { href: "/auto-drivers", label: "Auto Drivers" },
-      { href: "/jobs", label: "Job Openings" },
-      { href: "/properties", label: "Real Estate" },
-      { href: "/resale", label: "Resale Market" },
-    ],
-  },
-  {
-    title: "Marketing & Campaigns",
-    items: [
-      { href: "/ads", label: "Slider Banners" },
-      { href: "/popup-ads", label: "App Popup Ads" },
-      { href: "/sponsored-shops", label: "Sponsored Shops" },
-      { href: "/offers", label: "Deals & Offers" },
-    ],
-  },
-  {
-    title: "System Operations",
-    items: [
-      { href: "/users", label: "User Management" },
-      { href: "/notifications", label: "Push Notifications" },
+      { href: "/homepage-builder", label: "Homepage & Layout" },
       { href: "/categories", label: "App Categories" },
-      { href: "/reviews", label: "Reviews & Ratings" },
-      { href: "/calls", label: "Call History" },
-      { href: "/chats", label: "Chat Support" },
-      { href: "/follows", label: "Follows" },
+    ],
+  },
+  {
+    title: "Marketing OS",
+    items: [
+      { href: "/ads-os", label: "Advertisement OS" },
+      { href: "/sponsorship-os", label: "Sponsorship OS" },
+      { href: "/notification-os", label: "Notification OS" },
+    ],
+  },
+  {
+    title: "Hyperlocal Intel",
+    items: [
+      { href: "/search-intelligence", label: "Search Intelligence" },
+      { href: "/business-intelligence", label: "Business Intel" },
+      { href: "/user-intelligence", label: "User Intelligence" },
+    ],
+  },
+  {
+    title: "Control & Security",
+    items: [
+      { href: "/automation-engine", label: "Automation Engine" },
+      { href: "/audit-system", label: "System Audit Logs" },
+      { href: "/monitoring-center", label: "Monitoring Center" },
+      { href: "/roles-permissions", label: "Roles & Permissions" },
+      { href: "/export-center", label: "Data Export Center" },
       { href: "/settings", label: "Platform Settings" },
     ],
   },
 ] as const;
+

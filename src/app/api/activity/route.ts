@@ -42,6 +42,7 @@ function getSinceForRange(range: ActivityRangeKey) {
 }
 
 async function fetchActivityRows(supabase: ReturnType<typeof getAdminClient>, table: string, since: string) {
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from(table)
     .select("id,created_at")
