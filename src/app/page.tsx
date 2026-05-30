@@ -2,36 +2,93 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { NAV_GROUPS } from "@/lib/constants";
+
+type ActivityRangeKey = "today" | "24h" | "7d" | "30d";
+type ActivityEvent = { id: string; time: string; event: string; type: string };
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     users: "—",
+    activeUsersToday: "—",
+    newRegistrations: "—",
     businesses: "—",
+    services: "—",
+    jobs: "—",
+    properties: "—",
+    resale: "—",
+    events: "—",
+    news: "—",
     activeAds: "—",
+    sponsoredShops: "—",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [activityRange, setActivityRange] = useState<ActivityRangeKey>("24h");
 
-  // Simulated activity feed to make the dashboard feel alive and operational
-  const [activities, setActivities] = useState([
-    { id: 1, time: "10 mins ago", event: "Partner Account Ramesh Kumar linked successfully.", type: "user" },
-    { id: 2, time: "1 hr ago", event: "Push notification broadcast dispatched to all app users.", type: "notif" },
-    { id: 3, time: "3 hrs ago", event: "Driver MH12AB1234 vehicle registration status set to Approved.", type: "driver" },
-    { id: 4, time: "5 hrs ago", event: "Sponsored placement campaign for 'Sharma Bakery' enabled.", type: "ads" },
-    { id: 5, time: "Yesterday", event: "Dynamic category order updated in catalog settings.", type: "sys" },
-  ]);
+  const activityRanges: { key: ActivityRangeKey; label: string }[] = [
+    { key: "today", label: "Today" },
+    { key: "24h", label: "24 Hours" },
+    { key: "7d", label: "7 Days" },
+    { key: "30d", label: "30 Days" },
+  ];
+
+  async function loadStats() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/stats");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Unable to fetch platform health");
+      setStats({
+        users: String(data.users ?? "—"),
+        activeUsersToday: String(data.activeUsersToday ?? data.newRegistrations ?? "—"),
+        newRegistrations: String(data.newRegistrations ?? "—"),
+        businesses: String(data.businesses ?? "—"),
+        services: String(data.services ?? "—"),
+        jobs: String(data.jobs ?? "—"),
+        properties: String(data.properties ?? "—"),
+        resale: String(data.resale ?? "—"),
+        events: String(data.events ?? "—"),
+        news: String(data.news ?? "—"),
+        activeAds: String(data.activeAds ?? "—"),
+        sponsoredShops: String(data.sponsoredShops ?? "—"),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to sync platform metrics");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadActivity(range: ActivityRangeKey) {
+    setActivityLoading(true);
+    setActivityError(null);
+    try {
+      const res = await fetch(`/api/activity?range=${encodeURIComponent(range)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Unable to load activity feed");
+      setActivityEvents(Array.isArray(data.activities) ? data.activities : []);
+    } catch (err) {
+      setActivityError(err instanceof Error ? err.message : "Unable to load activity feed");
+      setActivityEvents([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadStats();
+  }, []);
+
+  useEffect(() => {
+    void loadActivity(activityRange);
+  }, [activityRange]);
 
   const refreshLogs = () => {
-    // Randomize logs order or timestamps slightly to simulate live tracking updates
-    setActivities((prev) => {
-      const shuffled = [...prev];
-      shuffled.sort(() => Math.random() - 0.5);
-      return shuffled.map((log, idx) => ({
-        ...log,
-        time: idx === 0 ? "Just now" : idx === 1 ? "4 mins ago" : `${idx * 2} hrs ago`,
-      }));
-    });
+    void loadActivity(activityRange);
   };
 
   useEffect(() => {
@@ -53,55 +110,121 @@ export default function DashboardPage() {
   }, []);
 
   const cards = [
-    { 
-      label: "Platform Citizens", 
-      value: stats.users, 
-      desc: "Registered users & partners", 
+    {
+      label: "Total Users",
+      value: stats.users,
+      desc: "Registered users and partners",
       icon: (
         <svg className="h-5 w-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
-      bg: "bg-teal-50 border-teal-100"
+      bg: "bg-teal-50 border-teal-100",
     },
-    { 
-      label: "Directory Outlets", 
-      value: stats.businesses, 
-      desc: "Approved shops & outlets", 
+    {
+      label: "Active Users Today",
+      value: stats.activeUsersToday,
+      desc: "Users active in the last 24h",
+      icon: (
+        <svg className="h-5 w-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      bg: "bg-sky-50 border-sky-100",
+    },
+    {
+      label: "New Registrations",
+      value: stats.newRegistrations,
+      desc: "Registered in the last 24h",
       icon: (
         <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       ),
-      bg: "bg-amber-50 border-amber-100"
+      bg: "bg-amber-50 border-amber-100",
     },
-    { 
-      label: "Live Campaigns", 
-      value: stats.activeAds, 
-      desc: "Running banner creative sets", 
+    {
+      label: "Businesses",
+      value: stats.businesses,
+      desc: "Active business listings",
+      icon: (
+        <svg className="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M5 7v14h6V7m8 0v14h-6V7m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+        </svg>
+      ),
+      bg: "bg-orange-50 border-orange-100",
+    },
+    {
+      label: "Services",
+      value: stats.services,
+      desc: "Service providers & listings",
+      icon: (
+        <svg className="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m-6 3h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      ),
+      bg: "bg-violet-50 border-violet-100",
+    },
+    {
+      label: "Jobs",
+      value: stats.jobs,
+      desc: "Open job listings",
       icon: (
         <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7V3H8v4M5 8h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V10a2 2 0 012-2z" />
         </svg>
       ),
-      bg: "bg-indigo-50 border-indigo-100"
+      bg: "bg-indigo-50 border-indigo-100",
     },
-    { 
-      label: "Call Channels", 
-      value: "Active", 
-      desc: "Real-time communications logs", 
+    {
+      label: "Properties",
+      value: stats.properties,
+      desc: "Active property listings",
       icon: (
         <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 001 1h3M9 21h6" />
         </svg>
       ),
-      bg: "bg-emerald-50 border-emerald-100"
+      bg: "bg-emerald-50 border-emerald-100",
+    },
+    {
+      label: "Resale",
+      value: stats.resale,
+      desc: "Resale listings live",
+      icon: (
+        <svg className="h-5 w-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      ),
+      bg: "bg-cyan-50 border-cyan-100",
+    },
+    {
+      label: "Events",
+      value: stats.events,
+      desc: "Upcoming event cards",
+      icon: (
+        <svg className="h-5 w-5 text-fuchsia-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3M16 7V3M3 11h18M5 21h14a2 2 0 002-2V11H3v8a2 2 0 002 2z" />
+        </svg>
+      ),
+      bg: "bg-fuchsia-50 border-fuchsia-100",
+    },
+    {
+      label: "News",
+      value: stats.news,
+      desc: "Published news items",
+      icon: (
+        <svg className="h-5 w-5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2z" />
+        </svg>
+      ),
+      bg: "bg-rose-50 border-rose-100",
     },
   ];
 
   const quickActions = [
     { label: "Create Partner Login", href: "/users", color: "from-teal-500 to-emerald-600", desc: "Build logins and profiles" },
-    { label: "Post Banners", href: "/ads", color: "from-indigo-500 to-blue-600", desc: "Setup active slider creatives" },
+    { label: "Add New Module", href: "/add-new", color: "from-indigo-500 to-blue-600", desc: "Dynamic Content Engine" },
     { label: "Global Push Alert", href: "/notifications", color: "from-amber-500 to-orange-600", desc: "Broadcast push notifications" },
     { label: "Manage Categories", href: "/categories", color: "from-purple-500 to-pink-600", desc: "Configure dynamic classifications" },
     { label: "Approve Local Shops", href: "/businesses", color: "from-sky-500 to-indigo-600", desc: "Directory verify and listings" },
@@ -183,42 +306,73 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Right 1 Column: Simulated Activity Feed */}
+        {/* Right 1 Column: Realtime Activity Feed */}
         <section className="glass-card rounded-3xl p-6 bg-white border border-slate-150 shadow-sm lg:col-span-1 flex flex-col justify-between space-y-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
               <div>
-                <h2 className="text-base font-black text-slate-900">Live Console Logs</h2>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Simulated Activity Monitor</p>
+                <h2 className="text-base font-black text-slate-900">Realtime Activity Stream</h2>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Live feed across users, listings, ads, and notifications</p>
               </div>
-              <button
-                type="button"
-                onClick={refreshLogs}
-                title="Refresh Logs feed"
-                className="p-1.5 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-slate-50 transition-all active:scale-90"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12" />
-                </svg>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {activityRanges.map((range) => (
+                  <button
+                    key={range.key}
+                    type="button"
+                    onClick={() => setActivityRange(range.key)}
+                    className={`rounded-full border px-3 py-2 text-[10px] font-bold transition-all ${
+                      activityRange === range.key
+                        ? "bg-teal-600 text-white border-teal-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {range.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={refreshLogs}
+                  title="Refresh feed"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
-            
+            {activityError && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-[10px] font-bold text-red-700">
+                {activityError}
+              </div>
+            )}
             <div className="space-y-3.5 max-h-80 overflow-y-auto scrollbar-thin pr-1">
-              {activities.map((act) => (
-                <div key={act.id} className="flex gap-3 text-xs font-semibold relative pl-4 border-l border-slate-150 py-0.5">
-                  {/* Glowing vertical marker bullet */}
-                  <span className={`absolute left-[-3.5px] top-1.5 h-1.5 w-1.5 rounded-full ${
-                    act.type === 'user' ? 'bg-teal-500' :
-                    act.type === 'notif' ? 'bg-amber-500' :
-                    act.type === 'driver' ? 'bg-indigo-500' :
-                    act.type === 'ads' ? 'bg-pink-500' : 'bg-slate-400'
-                  }`} />
-                  <div className="flex-1">
-                    <p className="text-slate-700 leading-snug font-medium">{act.event}</p>
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wide mt-0.5 block">{act.time}</span>
-                  </div>
+              {activityLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, idx) => (
+                    <div key={idx} className="h-12 rounded-2xl bg-slate-100 animate-pulse" />
+                  ))}
                 </div>
-              ))}
+              ) : activityEvents.length === 0 ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-[11px] text-slate-600">
+                  No recent activity found for the selected range. Try a wider window or refresh.
+                </div>
+              ) : (
+                activityEvents.map((act) => (
+                  <div key={act.id} className="flex gap-3 text-xs font-semibold relative pl-4 border-l border-slate-150 py-0.5">
+                    <span className={`absolute left-[-3.5px] top-1.5 h-1.5 w-1.5 rounded-full ${
+                      act.type === "user" ? "bg-teal-500" :
+                      act.type === "notif" ? "bg-amber-500" :
+                      act.type === "business" ? "bg-indigo-500" :
+                      act.type === "ads" ? "bg-pink-500" :
+                      act.type === "property" ? "bg-emerald-500" :
+                      "bg-slate-400"
+                    }`} />
+                    <div className="flex-1">
+                      <p className="text-slate-700 leading-snug font-medium">{act.event}</p>
+                      <span className="text-[9px] font-black uppercase text-slate-400 tracking-wide mt-0.5 block">{act.time}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
