@@ -107,7 +107,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem(ADMIN_OTP_SENT_AT_KEY, String(Date.now()));
     setState("otp_sent");
     setMessage(
-      `OTP code sent. Please enter the ${ADMIN_OTP_LENGTH}-digit code from the admin inbox.`,
+      `Verification code sent. Please enter the ${ADMIN_OTP_LENGTH}-digit code.`,
     );
   }
 
@@ -147,7 +147,7 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
           Manasa Upay Console
         </h1>
         <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
-          Admin access is protected with a Supabase one-time email OTP.
+          Admin access is protected with a secure one-time verification code.
         </p>
 
         <div className="mt-6 space-y-3">
