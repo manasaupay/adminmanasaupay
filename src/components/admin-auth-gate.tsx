@@ -9,6 +9,7 @@ type AuthState = "checking" | "signed_out" | "otp_sent" | "signed_in";
 const ADMIN_OTP_LENGTH = 8;
 const ADMIN_SESSION_MS = 60 * 60 * 1000;
 const OTP_RESEND_MS = 30 * 1000;
+const AUTH_TIMEOUT_MS = 20 * 1000;
 const ADMIN_LOGIN_AT_KEY = "manasa_admin_login_at";
 const ADMIN_OTP_SENT_AT_KEY = "manasa_admin_otp_sent_at";
 
@@ -91,24 +92,31 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setBusy(true);
-    setMessage("");
-    const { error } = await supabase.auth.signInWithOtp({
-      email: SUPPORT_EMAIL,
-      options: {
-        shouldCreateUser: false,
-      },
-    });
-    setBusy(false);
-    if (error) {
-      setMessage(error.message);
-      return;
+    try {
+      setBusy(true);
+      setMessage("");
+      const { error } = await withTimeout(
+        supabase.auth.signInWithOtp({
+          email: SUPPORT_EMAIL,
+          options: {
+            shouldCreateUser: false,
+          },
+        }),
+      );
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+      window.localStorage.setItem(ADMIN_OTP_SENT_AT_KEY, String(Date.now()));
+      setState("otp_sent");
+      setMessage(
+        `Verification code sent. Please enter the ${ADMIN_OTP_LENGTH}-digit code.`,
+      );
+    } catch (error) {
+      setMessage(getAuthErrorMessage(error));
+    } finally {
+      setBusy(false);
     }
-    window.localStorage.setItem(ADMIN_OTP_SENT_AT_KEY, String(Date.now()));
-    setState("otp_sent");
-    setMessage(
-      `Verification code sent. Please enter the ${ADMIN_OTP_LENGTH}-digit code.`,
-    );
   }
 
   async function verifyOtp() {
@@ -117,22 +125,29 @@ export function AdminAuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setBusy(true);
-    setMessage("");
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: SUPPORT_EMAIL,
-      token,
-      type: "email",
-    });
-    setBusy(false);
-    if (error) {
-      setMessage(error.message);
-      return;
+    try {
+      setBusy(true);
+      setMessage("");
+      const { data, error } = await withTimeout(
+        supabase.auth.verifyOtp({
+          email: SUPPORT_EMAIL,
+          token,
+          type: "email",
+        }),
+      );
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+      window.localStorage.setItem(ADMIN_LOGIN_AT_KEY, String(Date.now()));
+      window.localStorage.removeItem(ADMIN_OTP_SENT_AT_KEY);
+      if (data.session?.access_token) installAuthFetch(data.session.access_token);
+      setState("signed_in");
+    } catch (error) {
+      setMessage(getAuthErrorMessage(error));
+    } finally {
+      setBusy(false);
     }
-    window.localStorage.setItem(ADMIN_LOGIN_AT_KEY, String(Date.now()));
-    window.localStorage.removeItem(ADMIN_OTP_SENT_AT_KEY);
-    if (data.session?.access_token) installAuthFetch(data.session.access_token);
-    setState("signed_in");
   }
 
   if (state === "signed_in") return children;
@@ -237,6 +252,26 @@ function formatRemaining(ms: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function withTimeout<T>(promise: Promise<T>) {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(
+          new Error(
+            "Auth request timed out. Please check internet/Supabase settings and try again.",
+          ),
+        );
+      }, AUTH_TIMEOUT_MS);
+    }),
+  ]);
+}
+
+function getAuthErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return "Unable to send OTP. Please try again.";
 }
 
 function installAuthFetch(accessToken: string) {
