@@ -122,7 +122,6 @@ function text(row: AdminRow, key: string, fallback = "") {
 export async function triggerAutoNotification(table: string, data: AdminRow) {
   const ignored = new Set([
     "ads",
-    "popup_ads",
     "sponsored_shops",
     "users",
     "chat_messages",

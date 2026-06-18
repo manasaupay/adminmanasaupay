@@ -6,7 +6,6 @@ type PricingPackages = {
   sponsored_shop_fee: number;
   service_provider_fee: number;
   inline_banner_fee: number;
-  popup_ad_fee: number;
   job_featured_fee: number;
   property_featured_fee: number;
   resale_featured_fee: number;
@@ -15,7 +14,7 @@ type PricingPackages = {
 type Invoice = {
   id: string;
   vendorName: string;
-  type: "sponsored" | "banner" | "popup" | "featured";
+  type: "sponsored" | "banner" | "featured";
   amount: number;
   date: string;
   status: "paid" | "pending" | "failed";
@@ -27,7 +26,6 @@ export default function RevenueOsPage() {
     sponsored_shop_fee: 250,
     service_provider_fee: 120,
     inline_banner_fee: 800,
-    popup_ad_fee: 1500,
     job_featured_fee: 100,
     property_featured_fee: 300,
     resale_featured_fee: 50,
@@ -38,7 +36,6 @@ export default function RevenueOsPage() {
     totalBusinesses: 0,
     totalServices: 0,
     totalAds: 0,
-    totalPopups: 0,
     totalJobs: 0,
     totalProperties: 0,
     totalResale: 0,
@@ -66,7 +63,6 @@ export default function RevenueOsPage() {
         totalBusinesses: statsData.businesses ?? 0,
         totalServices: statsData.services ?? 0,
         totalAds: statsData.activeAds ?? 0,
-        totalPopups: statsData.activeAds > 0 ? Math.max(1, Math.round(statsData.activeAds * 0.3)) : 0,
         totalJobs: statsData.jobs ?? 0,
         totalProperties: statsData.properties ?? 0,
         totalResale: statsData.resale ?? 0,
@@ -88,7 +84,7 @@ export default function RevenueOsPage() {
       // Generate dynamic invoices based on active directory data
       const mockInvoices: Invoice[] = [];
       const shopNames = ["Verma Sweet Mansion", "Rathore Repairs", "Shree Balaji Electronics", "Apex Properties", "Modern Gym & Fitness", "Sharma Grocers", "Manasa Cafe & Restaurant"];
-      const types: Invoice["type"][] = ["sponsored", "banner", "popup", "featured"];
+      const types: Invoice["type"][] = ["sponsored", "banner", "featured"];
       const methods = ["UPI (GPay/PhonePe)", "Razorpay Link", "Credit Card", "NetBanking"];
 
       for (let i = 0; i < 8; i++) {
@@ -96,7 +92,6 @@ export default function RevenueOsPage() {
         const type = types[i % types.length];
         let amount = 250;
         if (type === "banner") amount = 800;
-        else if (type === "popup") amount = 1500;
         else if (type === "featured") amount = 300;
 
         mockInvoices.push({
@@ -111,7 +106,7 @@ export default function RevenueOsPage() {
       }
       setInvoices(mockInvoices);
 
-    } catch (err) {
+    } catch {
       setErrorMsg("Failed to sync live revenue matrix.");
     } finally {
       setLoading(false);
@@ -119,7 +114,10 @@ export default function RevenueOsPage() {
   }
 
   useEffect(() => {
-    void loadData();
+    const timer = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSavePackages = async (e: React.FormEvent) => {
@@ -139,7 +137,7 @@ export default function RevenueOsPage() {
         setting_type: "json",
         group_name: "revenue",
         value: JSON.stringify(packages),
-        description: "B2B listing directories boost, banner placement, and popup ad package pricing configurations.",
+        description: "B2B listing directories boost, banner placement, and featured package pricing configurations.",
         active: true,
       };
 
@@ -186,9 +184,8 @@ export default function RevenueOsPage() {
   // Yield Math
   const calculatedSponsored = (stats.totalBusinesses * packages.sponsored_shop_fee) + (stats.totalServices * packages.service_provider_fee);
   const calculatedBanners = stats.totalAds * packages.inline_banner_fee;
-  const calculatedPopups = stats.totalPopups * packages.popup_ad_fee;
   const calculatedFeatured = (stats.totalJobs * packages.job_featured_fee) + (stats.totalProperties * packages.property_featured_fee) + (stats.totalResale * packages.resale_featured_fee);
-  const monthlySum = calculatedSponsored + calculatedBanners + calculatedPopups + calculatedFeatured;
+  const monthlySum = calculatedSponsored + calculatedBanners + calculatedFeatured;
   const lifetimeSum = (monthlySum * 12) + 125000; // Simulated historical baseline
 
   return (
@@ -198,7 +195,7 @@ export default function RevenueOsPage() {
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Revenue OS</h1>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
-            Manage listing boost subscriptions, popup banners billing models, and control B2B pricing packages instantly.
+            Manage listing boost subscriptions, banner billing models, and control B2B pricing packages instantly.
           </p>
         </div>
         <button
@@ -291,16 +288,6 @@ export default function RevenueOsPage() {
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-800 focus:border-teal-500 outline-none"
                     />
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400">Timed Popup Ad Modal 30d (₹)</label>
-                    <input
-                      type="number"
-                      value={packages.popup_ad_fee}
-                      onChange={(e) => setPackages({ ...packages, popup_ad_fee: Number(e.target.value) })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-800 focus:border-teal-500 outline-none"
-                    />
-                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -356,7 +343,6 @@ export default function RevenueOsPage() {
                 {[
                   { label: "Sponsored Listings Boosts", percent: monthlySum > 0 ? Math.round((calculatedSponsored / monthlySum) * 100) : 38, amount: calculatedSponsored },
                   { label: "Inline Banner Campaign Ads", percent: monthlySum > 0 ? Math.round((calculatedBanners / monthlySum) * 100) : 32, amount: calculatedBanners },
-                  { label: "Popup Modal Campaigns", percent: monthlySum > 0 ? Math.round((calculatedPopups / monthlySum) * 100) : 18, amount: calculatedPopups },
                   { label: "Featured Hyperlocal Posts", percent: monthlySum > 0 ? Math.round((calculatedFeatured / monthlySum) * 100) : 12, amount: calculatedFeatured },
                 ].map((stream, idx) => (
                   <div key={idx} className="space-y-1">
@@ -405,7 +391,6 @@ export default function RevenueOsPage() {
                         <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
                           inv.type === "sponsored" ? "bg-teal-50 text-teal-700 border border-teal-100" :
                           inv.type === "banner" ? "bg-indigo-50 text-indigo-700 border border-indigo-100" :
-                          inv.type === "popup" ? "bg-amber-50 text-amber-700 border border-amber-100" :
                           "bg-sky-50 text-sky-700 border border-sky-100"
                         }`}>
                           {inv.type}

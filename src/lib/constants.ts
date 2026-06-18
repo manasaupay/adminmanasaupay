@@ -13,7 +13,6 @@ export const NAV_ITEMS = [
   { href: "/jobs", label: "Jobs" },
   { href: "/categories", label: "Categories" },
   { href: "/ads", label: "Advertisements" },
-  { href: "/popup-ads", label: "Popup Ads" },
   { href: "/sponsored-shops", label: "Sponsored Shops" },
   { href: "/notifications", label: "Notifications" },
   { href: "/updates", label: "City Updates" },
@@ -93,4 +92,3 @@ export const NAV_GROUPS = [
     ],
   },
 ] as const;
-

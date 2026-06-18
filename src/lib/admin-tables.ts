@@ -6,7 +6,6 @@ export type AdminTableKey =
   | "jobs"
   | "categories"
   | "ads"
-  | "popup_ads"
   | "sponsored_shops"
   | "notifications"
   | "updates"
@@ -264,7 +263,6 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
         options: [
           "slider",
           "in_page",
-          "popup",
           "sponsored_card",
           "featured_shop",
           "search_result",
@@ -294,35 +292,6 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "start_date", label: "Start", type: "date" },
       { key: "expiry_date", label: "End", type: "date" },
       { key: "meta.audience", label: "Audience Note" },
-    ],
-  },
-  popup_ads: {
-    key: "popup_ads",
-    title: "Popup Ads",
-    description:
-      "Control popup creatives, CTAs, trigger rules, frequency, category targeting, and priority.",
-    sectionKey: "ads",
-    activeField: "active",
-    columns: [
-      { key: "title", label: "Title" },
-      { key: "image_url", label: "Image", type: "image" },
-      { key: "cta_label", label: "CTA Label" },
-      { key: "redirect_link", label: "Link" },
-      {
-        key: "trigger_type",
-        label: "Trigger",
-        options: ["app_open", "timed", "category", "campaign"],
-        type: "enum",
-      },
-      { key: "frequency", label: "Frequency" },
-      {
-        key: "category_key",
-        label: "Category Target",
-        optionSource: "categoryKeys",
-      },
-      { key: "priority", label: "Priority" },
-      { key: "start_at", label: "Start", type: "date" },
-      { key: "end_at", label: "End", type: "date" },
     ],
   },
   sponsored_shops: {

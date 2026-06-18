@@ -11,10 +11,16 @@ type Rule = {
   runs: number;
 };
 
+type SettingsRow = {
+  id: string;
+  key?: string;
+  value?: string;
+};
+
 export default function AutomationEnginePage() {
   const [rules, setRules] = useState<Rule[]>([
     { id: "1", trigger: "IF Shop Approved", action: "THEN Blast Dynamic Notification", active: true, desc: "Sends custom push alerts to all app users immediately upon vendor verification approval.", runs: 42 },
-    { id: "2", trigger: "IF Ad Expires", action: "THEN Disable Placement Target", active: true, desc: "Monitors expired banners and popups every 1 hour and pulls them from rendering blocks.", runs: 124 },
+    { id: "2", trigger: "IF Ad Expires", action: "THEN Disable Placement Target", active: true, desc: "Monitors expired banners every 1 hour and pulls them from rendering blocks.", runs: 124 },
     { id: "3", trigger: "IF Event Published", action: "THEN Boost to Homepage Builders", active: false, desc: "Pins upcoming local cultural events to homepage carousels automatically on submission.", runs: 0 },
     { id: "4", trigger: "IF Rental Property Listed", action: "THEN Notify Rentals Followers", active: true, desc: "Fires personalized deep links to active category follows when a new flat is listed.", runs: 8 },
   ]);
@@ -34,7 +40,7 @@ export default function AutomationEnginePage() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const configSetting = data.find((s: any) => s.key === "automation_rules_config");
+          const configSetting = (data as SettingsRow[]).find((s) => s.key === "automation_rules_config");
           if (configSetting?.value) {
             try {
               const parsed = JSON.parse(configSetting.value);
@@ -54,7 +60,7 @@ export default function AutomationEnginePage() {
       const resSettings = await fetch("/api/admin/settings");
       const settingsList = await resSettings.json();
       const ruleRow = Array.isArray(settingsList)
-        ? settingsList.find((s: any) => s.key === "automation_rules_config")
+        ? (settingsList as SettingsRow[]).find((s) => s.key === "automation_rules_config")
         : null;
 
       const payloadValue = JSON.stringify(updatedRules);
@@ -201,7 +207,7 @@ export default function AutomationEnginePage() {
                 className="w-full rounded-xl border border-slate-200 bg-white px-2 py-3 text-xs text-slate-700 outline-none focus:border-teal-500 cursor-pointer"
               >
                 <option value="IF Shop Approved">IF business listing verified & approved</option>
-                <option value="IF Ad Expires">IF banner or popup expiry date lapses</option>
+                <option value="IF Ad Expires">IF banner expiry date lapses</option>
                 <option value="IF Event Published">IF user posts upcoming cultural event</option>
                 <option value="IF Rental Property Listed">IF fresh real estate plot listed</option>
               </select>

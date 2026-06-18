@@ -193,7 +193,7 @@ export default function MonitoringCenterPage() {
               <label className="flex items-center justify-between p-3 border rounded-2xl cursor-pointer hover:bg-slate-50 transition-all">
                 <div>
                   <span className="text-xs font-bold text-slate-800">Auth Breaches Shield</span>
-                  <span className="text-[8px] text-slate-400 font-bold block">Fires alarm on 5 consecutive OTP rejects</span>
+                  <span className="text-[8px] text-slate-400 font-bold block">Fires alarm on 5 consecutive login rejects</span>
                 </div>
                 <input
                   type="checkbox"

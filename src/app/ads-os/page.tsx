@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 type AdUnit = {
   id: string;
   title: string;
-  type: "slider" | "popup" | "sponsored" | "search";
+  type: "slider" | "sponsored" | "search";
   placement: string;
   impressions: number;
   clicks: number;
@@ -14,6 +14,21 @@ type AdUnit = {
   start_date: string;
   end_date: string;
   status: "active" | "scheduled" | "expired";
+};
+
+type AdminAdRow = {
+  id: string | number;
+  title?: string;
+  type?: string;
+  placement?: string;
+  priority?: number;
+  start_date?: string;
+  expiry_date?: string;
+};
+
+type AnalyticsRow = {
+  event_name?: string;
+  entity_id?: string | number;
 };
 
 export default function AdsOsPage() {
@@ -30,38 +45,32 @@ export default function AdsOsPage() {
     start_date: "",
     end_date: "",
     image_url: "",
-    trigger_type: "app_open",
-    frequency_val: "30",
-    frequency_unit: "s",
   });
 
   const [campaignSuccess, setCampaignSuccess] = useState(false);
 
-  // Load real ads, popup ads, and analytics from database
+  // Load real banner ads and analytics from database
   async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      const [resAds, resPopups, resAnalytics] = await Promise.all([
+      const [resAds, resAnalytics] = await Promise.all([
         fetch("/api/admin/ads"),
-        fetch("/api/admin/popup_ads"),
         fetch("/api/admin/analytics"),
       ]);
 
       const adsData = await resAds.json();
-      const popupsData = await resPopups.json();
       const analyticsData = await resAnalytics.json();
 
-      const adsList = Array.isArray(adsData) ? adsData : [];
-      const popupsList = Array.isArray(popupsData) ? popupsData : [];
-      const analyticsList = Array.isArray(analyticsData) ? analyticsData : [];
+      const adsList = Array.isArray(adsData) ? (adsData as AdminAdRow[]) : [];
+      const analyticsList = Array.isArray(analyticsData) ? (analyticsData as AnalyticsRow[]) : [];
 
       const parsedUnits: AdUnit[] = [];
 
       // Map standard ads
-      adsList.forEach((ad: any) => {
-        const clicks = analyticsList.filter((a: any) => a.event_name === "ad_click" && a.entity_id === String(ad.id)).length;
-        const impressions = analyticsList.filter((a: any) => a.event_name === "ad_impression" && a.entity_id === String(ad.id)).length || clicks * 6 + 12; // Dynamic representation if no impressions logged
+      adsList.forEach((ad) => {
+        const clicks = analyticsList.filter((a) => a.event_name === "ad_click" && String(a.entity_id) === String(ad.id)).length;
+        const impressions = analyticsList.filter((a) => a.event_name === "ad_impression" && String(a.entity_id) === String(ad.id)).length || clicks * 6 + 12; // Dynamic representation if no impressions logged
 
         const today = new Date().toISOString().slice(0, 10);
         let status: AdUnit["status"] = "active";
@@ -75,7 +84,7 @@ export default function AdsOsPage() {
           placement: ad.placement || "homepage",
           impressions,
           clicks,
-          revenue: ad.priority * 500 + 3500, // Dynamic revenue based on priority scoring
+          revenue: (ad.priority ?? 0) * 500 + 3500, // Dynamic revenue based on priority scoring
           ctr: impressions > 0 ? parseFloat(((clicks / impressions) * 100).toFixed(1)) : 0,
           start_date: ad.start_date || "—",
           end_date: ad.expiry_date || "—",
@@ -83,33 +92,8 @@ export default function AdsOsPage() {
         });
       });
 
-      // Map popup ads
-      popupsList.forEach((pop: any) => {
-        const clicks = analyticsList.filter((a: any) => a.event_name === "popup_click" && a.entity_id === String(pop.id)).length;
-        const impressions = analyticsList.filter((a: any) => a.event_name === "popup_impression" && a.entity_id === String(pop.id)).length || clicks * 5 + 8;
-
-        const today = new Date().toISOString();
-        let status: AdUnit["status"] = "active";
-        if (pop.end_at && pop.end_at < today) status = "expired";
-        else if (pop.start_at && pop.start_at > today) status = "scheduled";
-
-        parsedUnits.push({
-          id: String(pop.id),
-          title: pop.title || `Popup Ad #${String(pop.id).slice(0, 4)}`,
-          type: "popup",
-          placement: pop.category_key ? `category: ${pop.category_key}` : "in_app",
-          impressions,
-          clicks,
-          revenue: pop.priority * 800 + 4500,
-          ctr: impressions > 0 ? parseFloat(((clicks / impressions) * 100).toFixed(1)) : 0,
-          start_date: pop.start_at ? pop.start_at.slice(0, 10) : "—",
-          end_date: pop.end_at ? pop.end_at.slice(0, 10) : "—",
-          status,
-        });
-      });
-
       setAdUnits(parsedUnits);
-    } catch (err) {
+    } catch {
       setError("Unable to retrieve live advertisement indices.");
     } finally {
       setLoading(false);
@@ -117,7 +101,10 @@ export default function AdsOsPage() {
   }
 
   useEffect(() => {
-    void loadData();
+    const timer = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSubmitCampaign = async (e: React.FormEvent) => {
@@ -128,32 +115,18 @@ export default function AdsOsPage() {
     setCampaignSuccess(false);
 
     try {
-      const isPopup = form.type === "popup";
-      const endpoint = isPopup ? "/api/admin/popup_ads" : "/api/admin/ads";
+      const payload = {
+        title: form.title,
+        type: form.type === "slider" ? "slider" : "sponsored_card",
+        placement: form.placement,
+        image_url: form.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e",
+        active: true,
+        start_date: form.start_date || new Date().toISOString().slice(0, 10),
+        expiry_date: form.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        priority: 5,
+      };
 
-      const payload = isPopup
-        ? {
-            title: form.title,
-            image_url: form.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e",
-            trigger_type: form.trigger_type || "app_open",
-            frequency: form.trigger_type === "timed" ? `${form.frequency_val}${form.frequency_unit}` : null,
-            active: true,
-            start_at: form.start_date ? new Date(form.start_date).toISOString() : new Date().toISOString(),
-            end_at: form.end_date ? new Date(form.end_date).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            priority: 5,
-          }
-        : {
-            title: form.title,
-            type: form.type === "slider" ? "slider" : "sponsored_card",
-            placement: form.placement,
-            image_url: form.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e",
-            active: true,
-            start_date: form.start_date || new Date().toISOString().slice(0, 10),
-            expiry_date: form.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-            priority: 5,
-          };
-
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/admin/ads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -162,7 +135,7 @@ export default function AdsOsPage() {
       if (!res.ok) throw new Error("Failed to insert dynamic ad unit");
 
       setCampaignSuccess(true);
-      setForm({ title: "", type: "slider", placement: "homepage", revenue: "5000", start_date: "", end_date: "", image_url: "", trigger_type: "app_open", frequency_val: "30", frequency_unit: "s" });
+      setForm({ title: "", type: "slider", placement: "homepage", revenue: "5000", start_date: "", end_date: "", image_url: "" });
       void loadData();
       setTimeout(() => setCampaignSuccess(false), 3000);
     } catch (err) {
@@ -177,7 +150,7 @@ export default function AdsOsPage() {
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Advertisement OS</h1>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
-            Manage real banner placements, modal popup campaigns, search sponsors, and track live marketing CTR insights.
+            Manage real banner placements, search sponsors, and track live marketing CTR insights.
           </p>
         </div>
         <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200">
@@ -326,7 +299,6 @@ export default function AdsOsPage() {
                         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-800 outline-none focus:border-teal-500 cursor-pointer font-bold"
                       >
                         <option value="slider">Hero Banner Slider</option>
-                        <option value="popup">App Popup Modal</option>
                         <option value="sponsored">Sponsored card placement</option>
                       </select>
                     </div>
@@ -345,50 +317,6 @@ export default function AdsOsPage() {
                       </select>
                     </div>
                   </div>
-
-                  {form.type === "popup" && (
-                    <div className="grid gap-4 sm:grid-cols-2 animate-fade-in border border-slate-100 p-4 rounded-2xl bg-slate-50/30">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">Trigger Event</label>
-                        <select
-                          value={form.trigger_type}
-                          onChange={(e) => setForm({ ...form, trigger_type: e.target.value })}
-                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-800 outline-none focus:border-teal-500 cursor-pointer font-bold"
-                        >
-                          <option value="app_open">On App Launch (app_open)</option>
-                          <option value="timed">Timed Interval (timed)</option>
-                        </select>
-                      </div>
-
-                      {form.trigger_type === "timed" ? (
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-wide text-slate-400">Interval Frequency</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="number"
-                              min="1"
-                              value={form.frequency_val}
-                              onChange={(e) => setForm({ ...form, frequency_val: e.target.value })}
-                              placeholder="30"
-                              className="w-2/3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-800 focus:border-teal-500 outline-none"
-                            />
-                            <select
-                              value={form.frequency_unit}
-                              onChange={(e) => setForm({ ...form, frequency_unit: e.target.value })}
-                              className="w-1/3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-800 outline-none focus:border-teal-500 cursor-pointer font-bold"
-                            >
-                              <option value="s">sec</option>
-                              <option value="h">hr</option>
-                            </select>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center pt-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Triggers immediately on app start
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="space-y-1">
@@ -434,12 +362,12 @@ export default function AdsOsPage() {
               <section className="glass-card rounded-3xl border border-slate-150 bg-white p-5 shadow-sm space-y-4">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Placement Engine Advisor</h3>
                 <p className="text-[10px] text-slate-500 leading-relaxed font-semibold">
-                  The Ad OS places banner ads inside targeting pages automatically based on the chosen category target. For example, scheduling a campaign target to <strong>"Electrician"</strong> ensures it only shows when visitors explore electricians in town!
+                  The Ad OS places banner ads inside targeting pages automatically based on the chosen category target. For example, scheduling a campaign target to <strong>&quot;Electrician&quot;</strong> ensures it only shows when visitors explore electricians in town!
                 </p>
                 <div className="p-3 bg-teal-50/30 border border-teal-100 rounded-2xl">
                   <p className="text-[9px] font-black text-teal-600 uppercase">Pro Tip</p>
                   <p className="text-[9px] text-slate-500 leading-relaxed mt-1 font-semibold">
-                    Banners on high density categories like "Groceries" and "AC Services" charge an index score premium of ₹500 extra.
+                    Banners on high density categories like &quot;Groceries&quot; and &quot;AC Services&quot; charge an index score premium of ₹500 extra.
                   </p>
                 </div>
               </section>

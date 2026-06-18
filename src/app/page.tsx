@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const [revenue, setRevenue] = useState({
     sponsored: 18450,
     banners: 24900,
-    popups: 8250,
     featured: 14200,
     monthly: 65800,
     lifetime: 782400,
@@ -83,14 +82,12 @@ export default function DashboardPage() {
       // Calculate dynamic revenue based on real entries (B2B pricing factors)
       const calculatedSponsored = (bCount * 250) + (sCount * 120);
       const calculatedBanners = activeAdsCount * 800;
-      const calculatedPopups = (activeAdsCount > 0 ? activeAdsCount - 1 : 0) * 1500 + 1250;
       const calculatedFeatured = (jCount * 100) + (pCount * 300) + (rCount * 50);
-      const monthlySum = calculatedSponsored + calculatedBanners + calculatedPopups + calculatedFeatured;
+      const monthlySum = calculatedSponsored + calculatedBanners + calculatedFeatured;
 
       setRevenue({
         sponsored: calculatedSponsored || 18450,
         banners: calculatedBanners || 24900,
-        popups: calculatedPopups || 8250,
         featured: calculatedFeatured || 14200,
         monthly: monthlySum || 65800,
         lifetime: (monthlySum * 12) + 65800 || 782400,
@@ -120,11 +117,17 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    void loadStats();
+    const timer = window.setTimeout(() => {
+      void loadStats();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    void loadActivity(activityRange);
+    const timer = window.setTimeout(() => {
+      void loadActivity(activityRange);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [activityRange]);
 
   const refreshLogs = () => {
@@ -359,12 +362,12 @@ export default function DashboardPage() {
               </div>
 
               <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-white transition-all relative overflow-hidden group">
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Banner & Popup Campaigns</p>
-                <p className="text-2xl font-black text-slate-900 mt-1">₹{(revenue.banners + revenue.popups).toLocaleString()}</p>
+                <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">Banner Campaigns</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">₹{revenue.banners.toLocaleString()}</p>
                 <div className="mt-2.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div className="h-full bg-sky-500 rounded-full group-hover:scale-x-110 transition-transform origin-left" style={{ width: "80%" }} />
                 </div>
-                <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1.5">Sliders, Inline, and Popups</span>
+                <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block mt-1.5">Sliders and Inline Ads</span>
               </div>
 
               <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-white transition-all relative overflow-hidden group">
