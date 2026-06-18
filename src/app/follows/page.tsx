@@ -1,6 +1,3 @@
-import { SupabaseCrudTable } from "@/components/supabase-crud-table";
-import { ADMIN_TABLES } from "@/lib/admin-tables";
-
 export default function FollowsPage() {
-  return <SupabaseCrudTable config={ADMIN_TABLES.follows} />;
+  return <div className="px-8 py-12 text-center text-slate-500">This page has been deprecated. Follow data is no longer tracked in the current app flow.</div>;
 }

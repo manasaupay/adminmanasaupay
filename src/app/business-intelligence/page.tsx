@@ -10,7 +10,6 @@ type BusinessIntel = {
   calls: number;
   whatsapp: number;
   shares: number;
-  followers: number;
   rating: number;
   healthScore: number;
   status: "Excellent" | "Good" | "Average" | "Critical";
@@ -28,22 +27,19 @@ export default function BusinessIntelligencePage() {
     setLoading(true);
     setError(null);
     try {
-      const [resOptions, resAnalytics, resReviews, resFollows] = await Promise.all([
+      const [resOptions, resAnalytics, resReviews] = await Promise.all([
         fetch("/api/admin/options"),
         fetch("/api/admin/analytics"),
         fetch("/api/admin/reviews"),
-        fetch("/api/admin/follows"),
       ]);
 
       const optionsData = await resOptions.json();
       const analyticsList = await resAnalytics.json();
       const reviewsList = await resReviews.json();
-      const followsList = await resFollows.json();
 
       const rawShops = Array.isArray(optionsData.businesses) ? optionsData.businesses : [];
       const analytics = Array.isArray(analyticsList) ? analyticsList : [];
       const reviews = Array.isArray(reviewsList) ? reviewsList : [];
-      const follows = Array.isArray(followsList) ? followsList : [];
 
       const parsed: BusinessIntel[] = rawShops.map((shop: any) => {
         const id = String(shop.value);
@@ -57,15 +53,13 @@ export default function BusinessIntelligencePage() {
         const shares = analytics.filter((a) => a.event_name === "share_click" && a.entity_id === id).length;
         
         // Count active follows
-        const followers = follows.filter((f) => f.target_type === "business" && String(f.target_id) === id && f.active).length;
-
         // Calculate average star rating from reviews
         const shopReviews = reviews.filter((r) => r.target_type === "business" && String(r.target_id) === id && r.active);
         const totalStars = shopReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
         const rating = shopReviews.length > 0 ? parseFloat((totalStars / shopReviews.length).toFixed(1)) : 4.2;
 
         // Calculate Business Health Score out of 100
-        const scoreBase = views * 2 + calls * 10 + whatsapp * 15 + followers * 20;
+        const scoreBase = views * 2 + calls * 10 + whatsapp * 15 + shares * 12;
         const healthScore = Math.min(100, Math.max(30, Math.round((scoreBase / (views * 3 || 1)) * 10)));
 
         let status: BusinessIntel["status"] = "Average";
@@ -82,7 +76,6 @@ export default function BusinessIntelligencePage() {
           calls,
           whatsapp,
           shares,
-          followers,
           rating,
           healthScore,
           status,
@@ -116,7 +109,7 @@ export default function BusinessIntelligencePage() {
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Business Intelligence Center</h1>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
-            Track real views, calls, WhatsApp triggers, followers, and rating indices per shop. Calculate automatic health index scores.
+            Track real views, calls, WhatsApp triggers, shares, and rating indices per shop. Calculate automatic health index scores.
           </p>
         </div>
       </div>
@@ -243,13 +236,9 @@ export default function BusinessIntelligencePage() {
                   <div className="glass-card rounded-3xl border border-slate-150 bg-white p-6 shadow-sm space-y-4">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Directory Engagement</h3>
                     <div className="grid gap-4 grid-cols-2">
-                      <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 text-center">
+                      <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 text-center col-span-2">
                         <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">App Shares</p>
                         <p className="text-xl font-black text-slate-900 mt-1">{selectedBusiness.shares}</p>
-                      </div>
-                      <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 text-center">
-                        <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">App Followers</p>
-                        <p className="text-xl font-black text-slate-900 mt-1">{selectedBusiness.followers}</p>
                       </div>
                       <div className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 text-center col-span-2">
                         <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Telemetry Status</p>

@@ -22,7 +22,7 @@ export default function AutomationEnginePage() {
     { id: "1", trigger: "IF Shop Approved", action: "THEN Blast Dynamic Notification", active: true, desc: "Sends custom push alerts to all app users immediately upon vendor verification approval.", runs: 42 },
     { id: "2", trigger: "IF Ad Expires", action: "THEN Disable Placement Target", active: true, desc: "Monitors expired banners every 1 hour and pulls them from rendering blocks.", runs: 124 },
     { id: "3", trigger: "IF Event Published", action: "THEN Boost to Homepage Builders", active: false, desc: "Pins upcoming local cultural events to homepage carousels automatically on submission.", runs: 0 },
-    { id: "4", trigger: "IF Rental Property Listed", action: "THEN Notify Rentals Followers", active: true, desc: "Fires personalized deep links to active category follows when a new flat is listed.", runs: 8 },
+    { id: "4", trigger: "IF Rental Property Listed", action: "THEN Notify Nearby Users", active: true, desc: "Fires a localized engagement update to nearby users when a new rental listing is published.", runs: 8 },
   ]);
 
   const [form, setForm] = useState({
@@ -223,7 +223,7 @@ export default function AutomationEnginePage() {
                 <option value="THEN Blast Dynamic Notification">Blast automated push alert</option>
                 <option value="THEN Disable Placement Target">Pull from slider carousel</option>
                 <option value="THEN Boost to Homepage Builders">Pin directly on Visual Builder</option>
-                <option value="THEN Notify Rentals Followers">Trigger targeted follows emails</option>
+                <option value="THEN Notify Nearby Users">Trigger localized engagement broadcast</option>
               </select>
             </div>
 

@@ -15,8 +15,6 @@ export type AdminTableKey =
   | "properties"
   | "resale"
   | "reviews"
-  | "follows"
-  | "likes"
   | "analytics"
   | "call_sessions"
   | "chat_threads"
@@ -512,39 +510,6 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
           "property",
           "product",
           "offer",
-        ],
-        type: "enum",
-      },
-      { key: "target_id", label: "Target ID" },
-      {
-        key: "notification_preferences.channels",
-        label: "Notification Channels",
-      },
-    ],
-  },
-  likes: {
-    key: "likes",
-    title: "Likes",
-    description:
-      "Inspect user likes for shops, services, products, offers, and listings.",
-    sectionKey: "follows",
-    activeField: "active",
-    columns: [
-      { key: "user_id", label: "User", optionSource: "users" },
-      {
-        key: "target_type",
-        label: "Target",
-        options: [
-          "business",
-          "service",
-          "product",
-          "offer",
-          "job",
-          "property",
-          "resale",
-          "event",
-          "news",
-          "update",
         ],
         type: "enum",
       },

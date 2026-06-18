@@ -13,7 +13,7 @@ const createGroups: { title: string; keys: AdminTableKey[] }[] = [
   { title: "Engagement Content", keys: ["offers", "news", "events", "updates"] },
   { title: "Advertisements", keys: ["ads", "sponsored_shops"] },
   { title: "Platform Comms", keys: ["notifications", "chat_messages"] },
-  { title: "System", keys: ["settings", "likes", "follows"] },
+  { title: "System", keys: ["settings"] },
 ];
 
 function createBlankRow(config: AdminTableConfig): EditableRow {

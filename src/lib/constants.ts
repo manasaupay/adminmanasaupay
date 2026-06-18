@@ -23,7 +23,6 @@ export const NAV_ITEMS = [
   { href: "/properties", label: "Properties" },
   { href: "/resale", label: "Resale" },
   { href: "/reviews", label: "Reviews" },
-  { href: "/follows", label: "Follows" },
   { href: "/analytics", label: "Analytics" },
   { href: "/calls", label: "Calls" },
   { href: "/chats", label: "Chats" },
