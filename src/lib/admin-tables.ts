@@ -490,32 +490,7 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "reported_count", label: "Reports" },
     ],
   },
-  follows: {
-    key: "follows",
-    title: "Follow System",
-    description:
-      "Inspect follow relationships for businesses, services, creators, categories, and listings.",
-    sectionKey: "follows",
-    activeField: "active",
-    columns: [
-      { key: "user_id", label: "User", optionSource: "users" },
-      {
-        key: "target_type",
-        label: "Target",
-        options: [
-          "business",
-          "service",
-          "creator",
-          "category",
-          "property",
-          "product",
-          "offer",
-        ],
-        type: "enum",
-      },
-      { key: "target_id", label: "Target ID" },
-    ],
-  },
+
   analytics: {
     key: "analytics",
     title: "Analytics Events",
