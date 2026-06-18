@@ -21,7 +21,10 @@ export default function DashboardPage() {
     news: "—",
     activeAds: "—",
     sponsoredShops: "—",
+    monthlyCallMinutes: 0,
+    totalStorageBytes: 0,
   });
+  const [storageUnit, setStorageUnit] = useState<"MB" | "GB">("MB");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
@@ -77,6 +80,8 @@ export default function DashboardPage() {
         news: String(nCount),
         activeAds: String(activeAdsCount),
         sponsoredShops: String(sponsoredShopsCount),
+        monthlyCallMinutes: data.monthlyCallMinutes ?? 0,
+        totalStorageBytes: data.totalStorageBytes ?? 0,
       });
 
       // Calculate dynamic revenue based on real entries (B2B pricing factors)
@@ -135,6 +140,20 @@ export default function DashboardPage() {
     void loadStats();
   };
 
+  const getStorageValue = () => {
+    if (stats.totalStorageBytes === 0) return "0.00";
+    if (storageUnit === "MB") {
+      return (stats.totalStorageBytes / (1024 * 1024)).toFixed(2);
+    } else {
+      return (stats.totalStorageBytes / (1024 * 1024 * 1024)).toFixed(2);
+    }
+  };
+
+  const toggleStorageUnit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setStorageUnit(prev => prev === "MB" ? "GB" : "MB");
+  };
+
   const healthCards = [
     {
       label: "Total Users",
@@ -148,26 +167,36 @@ export default function DashboardPage() {
       bg: "bg-teal-500/10 border-teal-500/20 text-teal-700",
     },
     {
-      label: "Active Users Today",
-      value: stats.activeUsersToday,
-      desc: "Users active in last 24h",
+      label: "Call Activity",
+      value: `${stats.monthlyCallMinutes}m`,
+      desc: "Total call minutes this month",
       icon: (
-        <svg className="h-5 w-5 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
         </svg>
       ),
-      bg: "bg-sky-500/10 border-sky-500/20 text-sky-700",
+      bg: "bg-blue-500/10 border-blue-500/20 text-blue-700",
     },
     {
-      label: "New Registrations",
-      value: stats.newRegistrations,
-      desc: "Registered in last 24h",
+      label: "Storage Space",
+      value: (
+        <div className="flex items-end gap-1">
+          {getStorageValue()} 
+          <button 
+            onClick={toggleStorageUnit}
+            className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+          >
+            {storageUnit}
+          </button>
+        </div>
+      ),
+      desc: "Total DB & Storage usage",
       icon: (
-        <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m-12 5v2m8-2v2" />
         </svg>
       ),
-      bg: "bg-amber-500/10 border-amber-500/20 text-amber-700",
+      bg: "bg-purple-500/10 border-purple-500/20 text-purple-700",
     },
     {
       label: "Businesses",
