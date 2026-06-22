@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AdminInfoDrawer } from "@/components/admin-info-drawer";
 
 type SponsoredEntity = {
   id: string;
@@ -14,6 +15,7 @@ type SponsoredEntity = {
 };
 
 export default function SponsorshipOsPage() {
+  const [showInfo, setShowInfo] = useState(false);
   const [entities, setEntities] = useState<SponsoredEntity[]>([]);
   const [shops, setShops] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +133,18 @@ export default function SponsorshipOsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Sponsorship OS</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">Sponsorship OS</h1>
+            <button
+              onClick={() => setShowInfo(true)}
+              title="Show Sponsorship OS Guide"
+              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
             Boost directory entities using real-time priority scores. Boosted shops show on top lists.
           </p>
@@ -318,6 +331,29 @@ export default function SponsorshipOsPage() {
           </section>
         </div>
       )}
+
+      <AdminInfoDrawer
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        title="Sponsorship OS"
+        subtitle="Marketing OS Module"
+        purpose="Configures target listings boost metrics, priority scores, and campaigns timelines."
+        sections={[
+          {
+            title: "Active Sponsorships List",
+            desc: "Displays boosted directory entities, listing their relative sorting priority index and display channels."
+          },
+          {
+            title: "Launch Boost Campaign",
+            desc: "Select a registered shop, designate placement channels, and define priority scores (0-10) to pin listing on top."
+          },
+          {
+            title: "Image Specifications",
+            desc: "Category page sponsorship promo banners: 800 x 400 px (2:1 landscape). Carousel ads: 1000 x 500 px.",
+            imageRecommendation: "800 x 400 px subcategory banner"
+          }
+        ]}
+      />
     </div>
   );
 }

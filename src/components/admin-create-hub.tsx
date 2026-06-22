@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ADMIN_TABLES, type AdminTableConfig, type AdminTableKey } from "@/lib/admin-tables";
+import { AdminInfoDrawer } from "./admin-info-drawer";
 
 type EditableRow = Record<string, string | boolean>;
 type Option = { value: string; label: string };
@@ -119,6 +120,7 @@ export function AdminCreateHub() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const config = ADMIN_TABLES[selected];
 
   const allKeys = useMemo(() => createGroups.flatMap((group) => group.keys), []);
@@ -189,8 +191,19 @@ export function AdminCreateHub() {
   return (
     <div className="space-y-6">
       {/* Title box */}
-      <section className="glass-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-black text-slate-900">Console Dynamic Creator</h1>
+      <section className="glass-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-900">Console Dynamic Creator</h1>
+          <button
+            onClick={() => setShowInfo(true)}
+            title="Show Creator Hub Guide"
+            className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+          >
+            <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+        </div>
         <p className="mt-1.5 text-xs text-slate-500 font-medium">
           Create new categories, subcategories, directory profiles, campaigns, and settings from a single premium control hub.
         </p>
@@ -405,6 +418,28 @@ export function AdminCreateHub() {
           </div>
         </section>
       </div>
+
+      <AdminInfoDrawer
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        title="Creator Hub"
+        subtitle="Operational Data Hub"
+        purpose="Dynamic builder to inject new entities, structures, advertisements, and settings variables into the Supabase database."
+        sections={[
+          {
+            title: "Creator Selection",
+            desc: "Use the sidebar selector or dropdown to choose which entity to create. Fields and templates render dynamically."
+          },
+          {
+            title: "Structured Forms",
+            desc: "Fields are grouped and structured into a multi-column responsive grid, preventing laptop layout squishing."
+          },
+          {
+            title: "Image Specifications",
+            desc: "Logo/Avatars: 200 x 200 px (1:1). Category Icons: 128 x 128 px transparent PNG. Ad banners & Promos: 1000 x 500 px (2:1). Product Catalog: 600 x 600 px."
+          }
+        ]}
+      />
     </div>
   );
 }

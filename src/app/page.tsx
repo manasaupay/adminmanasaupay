@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { NAV_GROUPS } from "@/lib/constants";
+import { AdminInfoDrawer } from "@/components/admin-info-drawer";
 
 type ActivityRangeKey = "today" | "24h" | "7d" | "30d";
 type ActivityEvent = { id: string; time: string; event: string; type: string };
 
 export default function DashboardPage() {
+  const [showInfo, setShowInfo] = useState(false);
   const [stats, setStats] = useState({
     users: "—",
     activeUsersToday: "—",
@@ -283,7 +285,18 @@ export default function DashboardPage() {
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Mission Control Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">Mission Control Dashboard</h1>
+            <button
+              onClick={() => setShowInfo(true)}
+              title="Show Dashboard Guide"
+              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
             Unified operations, campaigns, revenue, and intelligence hub for the <span className="text-teal-600 font-bold">Manasa Upay</span> hyperlocal ecosystem.
           </p>
@@ -543,6 +556,32 @@ export default function DashboardPage() {
           )}
         </div>
       </section>
+
+      <AdminInfoDrawer
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        title="Mission Control Dashboard"
+        subtitle="Platform Command Center"
+        purpose="Aggregates system health metrics, monthly revenue streams, direct consumer search intelligence, and real-time operations activity logs."
+        sections={[
+          {
+            title: "Platform Health Indicator",
+            desc: "Displays registered user volumes, live Agora call minutes, database storage consumption, and active partner directories."
+          },
+          {
+            title: "Missed Demand Opportunities",
+            desc: "Provides instant highlights of consumer searches returning 0 results. Add these categories immediately to fulfill demand!"
+          },
+          {
+            title: "Revenue Snapshot",
+            desc: "Estimated monetization streams based on priority listing upgrades, active banner slots, and featured placements."
+          },
+          {
+            title: "Realtime Activity Feed",
+            desc: "Auditable live log stream of directory entries, modifications, and partner registrations."
+          }
+        ]}
+      />
     </div>
   );
 }

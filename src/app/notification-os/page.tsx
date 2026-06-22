@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AdminInfoDrawer } from "@/components/admin-info-drawer";
 
 type NotificationCampaign = {
   id: string;
@@ -18,6 +19,7 @@ type NotificationCampaign = {
 };
 
 export default function NotificationOsPage() {
+  const [showInfo, setShowInfo] = useState(false);
   const [activeTab, setActiveTab] = useState<"builder" | "history">("builder");
   const [campaigns, setCampaigns] = useState<NotificationCampaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +163,18 @@ export default function NotificationOsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Notification OS</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">Notification OS</h1>
+            <button
+              onClick={() => setShowInfo(true)}
+              title="Show Notification OS Guide"
+              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
             Construct real push campaigns, segment user audiences, apply campaign templates, and track fcm delivery logs in real-time.
           </p>
@@ -395,6 +408,33 @@ export default function NotificationOsPage() {
           )}
         </>
       )}
+
+      <AdminInfoDrawer
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        title="Notification OS"
+        subtitle="Marketing OS Module"
+        purpose="Constructs, schedules, targets, and launches global FCM push notifications with customizable deep links."
+        sections={[
+          {
+            title: "Campaign Builder",
+            desc: "Construct custom notifications or load preset templates (Discount Offer, Breaking News, Town Event, Property Listing) to pre-fill campaign details."
+          },
+          {
+            title: "Audience Segmentation",
+            desc: "Blast notifications globally (All Users) or target specific registries (Businesses, Service Providers, Auto Drivers)."
+          },
+          {
+            title: "Image Guidelines",
+            desc: "FCM rich notification tray banners: 600 x 300 px (2:1 landscape). Standard web format (JPEG/PNG) under 1MB.",
+            imageRecommendation: "600 x 300 px banner"
+          },
+          {
+            title: "Analytics & History logs",
+            desc: "Examine delivery success, failed payloads, and live open-rate click-through telemetry."
+          }
+        ]}
+      />
     </div>
   );
 }

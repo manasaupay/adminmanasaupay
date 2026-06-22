@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AdminInfoDrawer } from "@/components/admin-info-drawer";
 
 type AdUnit = {
   id: string;
@@ -32,6 +33,7 @@ type AnalyticsRow = {
 };
 
 export default function AdsOsPage() {
+  const [showInfo, setShowInfo] = useState(false);
   const [activeTab, setActiveTab] = useState<"inventory" | "campaign" | "analytics">("inventory");
   const [adUnits, setAdUnits] = useState<AdUnit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +150,18 @@ export default function AdsOsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Advertisement OS</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">Advertisement OS</h1>
+            <button
+              onClick={() => setShowInfo(true)}
+              title="Show Ad OS Guide"
+              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
             Manage real banner placements, search sponsors, and track live marketing CTR insights.
           </p>
@@ -430,6 +443,33 @@ export default function AdsOsPage() {
           )}
         </>
       )}
+
+      <AdminInfoDrawer
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        title="Advertisement OS"
+        subtitle="Marketing OS Module"
+        purpose="Configures, monitors, and measures all in-app marketing slots including sliders, inline banners, and search priorities."
+        sections={[
+          {
+            title: "Ad Inventory",
+            desc: "Audits live slots, matching status (Active, Scheduled, Expired) with real telemetry click logs."
+          },
+          {
+            title: "Launch Campaign",
+            desc: "Create new banner listings. Provide title, type, placement targets, and image URLs to push live in-app."
+          },
+          {
+            title: "Image Sizes",
+            desc: "Slider Ad: 1000x500px (2:1 landscape). In-page Inline Ad: 800x300px. Search Results Ad: 600x150px.",
+            imageRecommendation: "1000 x 500 px for premium sliders"
+          },
+          {
+            title: "Analytics CTR Insights",
+            desc: "Ranks campaign performance based on CTR. Automatically calculates impressions to clicks ratio."
+          }
+        ]}
+      />
     </div>
   );
 }

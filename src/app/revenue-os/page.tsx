@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { AdminInfoDrawer } from "@/components/admin-info-drawer";
 
 type PricingPackages = {
   sponsored_shop_fee: number;
@@ -22,6 +23,7 @@ type Invoice = {
 };
 
 export default function RevenueOsPage() {
+  const [showInfo, setShowInfo] = useState(false);
   const [packages, setPackages] = useState<PricingPackages>({
     sponsored_shop_fee: 250,
     service_provider_fee: 120,
@@ -193,7 +195,18 @@ export default function RevenueOsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Revenue OS</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">Revenue OS</h1>
+            <button
+              onClick={() => setShowInfo(true)}
+              title="Show Revenue OS Guide"
+              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </div>
           <p className="text-slate-500 text-sm mt-1 font-semibold">
             Manage listing boost subscriptions, banner billing models, and control B2B pricing packages instantly.
           </p>
@@ -446,6 +459,28 @@ export default function RevenueOsPage() {
           </section>
         </>
       )}
+
+      <AdminInfoDrawer
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        title="Revenue OS"
+        subtitle="Fintech OS Module"
+        purpose="Configures directory pricing rates, projects monthly monetization yields, and audits payment receipts/invoices."
+        sections={[
+          {
+            title: "Pricing Packages Configurator",
+            desc: "Define standard charge values (INR) for shop sponsors priority, service provider listing, inline ads, and featured board listings."
+          },
+          {
+            title: "Projected Gross Yield Matrix",
+            desc: "Multiplies active database counts by active price packages to project real-time system revenue targets."
+          },
+          {
+            title: "Billing Ledger & Receipts",
+            desc: "Maintains invoice records. Audit transaction statuses, initiate refunds/void actions, and export text receipts."
+          }
+        ]}
+      />
     </div>
   );
 }
