@@ -23,7 +23,7 @@ export function PartnerUserCard() {
     role: "business",
     assignedTargetId: "",
     newTargetName: "",
-    newTargetCategory: "",
+    newTargetCategories: [] as string[],
     newTargetSubcategory: "",
     newTargetArea: "",
     newTargetVehicleNumber: "",
@@ -70,9 +70,9 @@ export function PartnerUserCard() {
   }, [form.role, options]);
 
   const subcategories = useMemo(() => {
-    if (!form.newTargetCategory) return [];
+    if (!form.newTargetCategories || form.newTargetCategories.length === 0) return [];
     return ((options as any).allCategories ?? [])
-      .filter((cat: any) => cat.parent_key === form.newTargetCategory)
+      .filter((cat: any) => form.newTargetCategories.includes(cat.parent_key))
       .map((cat: any) => ({
         value: cat.key,
         label: cat.label ?? cat.key,
@@ -92,8 +92,8 @@ export function PartnerUserCard() {
       if (!form.assignedTargetId) return `Please select a linkage option for the ${assignment.label}.`;
     }
     if (currentStep === 3 && assignment && form.assignedTargetId === "create_new") {
-      if (form.role !== "auto_driver" && !form.newTargetCategory) {
-        return `Please select a Category for the new ${assignment.label}.`;
+      if (form.role !== "auto_driver" && form.newTargetCategories.length === 0) {
+        return `Please select at least one Category for the new ${assignment.label}.`;
       }
       if (form.role === "auto_driver" && !form.newTargetVehicleNumber.trim()) {
         return "Please specify a Vehicle Number for the new driver.";
@@ -131,16 +131,19 @@ export function PartnerUserCard() {
     setMessage(null);
     setError(null);
     try {
-      const parentCat = ((options as any).allCategories ?? []).find(
-        (c: any) => c.key === form.newTargetCategory
-      );
       const subCat = ((options as any).allCategories ?? []).find(
         (c: any) => c.key === form.newTargetSubcategory
       );
 
+      // We resolve category labels for multiple categories
+      const selectedLabels = form.newTargetCategories.map(catKey => {
+         const cat = ((options as any).allCategories ?? []).find((c: any) => c.key === catKey);
+         return cat ? cat.label : catKey;
+      });
+
       const payload = {
         ...form,
-        newTargetCategory: parentCat ? parentCat.label : form.newTargetCategory,
+        newTargetCategories: selectedLabels.length > 0 ? selectedLabels : form.newTargetCategories,
         newTargetSubcategory: subCat ? subCat.label : form.newTargetSubcategory,
       };
 
@@ -162,7 +165,7 @@ export function PartnerUserCard() {
         role: "business",
         assignedTargetId: "",
         newTargetName: "",
-        newTargetCategory: "",
+        newTargetCategories: [],
         newTargetSubcategory: "",
         newTargetArea: "",
         newTargetVehicleNumber: "",
@@ -325,7 +328,7 @@ export function PartnerUserCard() {
                         ...form,
                         assignedTargetId: e.target.value,
                         newTargetName: "",
-                        newTargetCategory: "",
+                        newTargetCategories: [],
                         newTargetSubcategory: "",
                         newTargetArea: "",
                         newTargetVehicleNumber: "",
@@ -391,19 +394,24 @@ export function PartnerUserCard() {
                         No categories found. Create a category first.
                       </div>
                     ) : (
-                      <select
-                        value={form.newTargetCategory}
-                        onChange={(e) => setForm({ ...form, newTargetCategory: e.target.value, newTargetSubcategory: "" })}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-800 focus:border-teal-500/40 outline-none cursor-pointer"
-                        required
-                      >
-                        <option value="">-- Select Category --</option>
+                      <div className="w-full max-h-40 overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 space-y-2 custom-scrollbar">
                         {assignment.categories.map((cat: any) => (
-                          <option key={cat.value} value={cat.value}>
-                            {cat.label}
-                          </option>
+                          <label key={cat.value} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={form.newTargetCategories.includes(cat.value)}
+                              onChange={(e) => {
+                                const newCats = e.target.checked
+                                  ? [...form.newTargetCategories, cat.value]
+                                  : form.newTargetCategories.filter((c) => c !== cat.value);
+                                setForm({ ...form, newTargetCategories: newCats, newTargetSubcategory: "" });
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                            />
+                            <span className="text-xs font-semibold text-slate-800">{cat.label}</span>
+                          </label>
                         ))}
-                      </select>
+                      </div>
                     )}
                   </div>
 
@@ -413,7 +421,7 @@ export function PartnerUserCard() {
                       value={form.newTargetSubcategory}
                       onChange={(e) => setForm({ ...form, newTargetSubcategory: e.target.value })}
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-800 focus:border-teal-500/40 outline-none cursor-pointer"
-                      disabled={!form.newTargetCategory}
+                      disabled={form.newTargetCategories.length === 0}
                     >
                       <option value="">-- Choose Subcategory --</option>
                       {subcategories.map((sub: any) => (
@@ -524,8 +532,8 @@ export function PartnerUserCard() {
                         )}
                         {form.role !== "auto_driver" ? (
                           <div className="flex justify-between pl-3 border-l-2 border-teal-200">
-                            <span className="text-slate-400 text-[10px]">Scope Category</span>
-                            <span className="text-slate-850">{form.newTargetCategory}</span>
+                            <span className="text-slate-400 text-[10px]">Scope Categories</span>
+                            <span className="text-slate-850 truncate max-w-[150px]">{form.newTargetCategories.join(", ")}</span>
                           </div>
                         ) : (
                           <div className="flex justify-between pl-3 border-l-2 border-teal-200">

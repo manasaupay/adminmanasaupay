@@ -136,42 +136,52 @@ export async function POST(req: NextRequest) {
     // 3. Create the new dynamic profile (now that the user record exists!)
     if (assignment && isCreateNew) {
       if (role === "business") {
-        const { data: newTarget, error: createError } = await supabase
+        const categories = Array.isArray(body.newTargetCategories) && body.newTargetCategories.length > 0 
+          ? body.newTargetCategories 
+          : ["General"];
+        
+        const insertData = categories.map((cat: string) => ({
+          name: body.newTargetName || name || "New Business",
+          category: cat,
+          subcategory: body.newTargetSubcategory || "",
+          phone: phone || body.newTargetContact || "",
+          whatsapp: whatsapp || phone || "",
+          owner_id: authData.user.id,
+          is_approved: true,
+        }));
+
+        const { data: newTargets, error: createError } = await supabase
           .from("businesses")
-          .insert({
-            name: body.newTargetName || name || "New Business",
-            category: body.newTargetCategory || "General",
-            subcategory: body.newTargetSubcategory || "",
-            phone: phone || body.newTargetContact || "",
-            whatsapp: whatsapp || phone || "",
-            owner_id: authData.user.id,
-            is_approved: true,
-          })
-          .select("*")
-          .single();
+          .insert(insertData)
+          .select("*");
 
         if (createError) throw new Error(`Could not create business profile: ${createError.message}`);
-        finalTargetId = newTarget.id;
-        void triggerAutoNotification("businesses", newTarget);
+        finalTargetId = newTargets[0].id;
+        newTargets.forEach(target => triggerAutoNotification("businesses", target));
       } else if (role === "service_provider") {
-        const { data: newTarget, error: createError } = await supabase
+        const categories = Array.isArray(body.newTargetCategories) && body.newTargetCategories.length > 0 
+          ? body.newTargetCategories 
+          : ["General"];
+          
+        const insertData = categories.map((cat: string) => ({
+          name: body.newTargetName || name || "New Service",
+          category: cat,
+          subcategory: body.newTargetSubcategory || "",
+          contact: phone || body.newTargetContact || "",
+          whatsapp: whatsapp || phone || "",
+          area: body.newTargetArea || "",
+          provider_id: authData.user.id,
+          is_approved: true,
+        }));
+
+        const { data: newTargets, error: createError } = await supabase
           .from("services")
-          .insert({
-            name: body.newTargetName || name || "New Service",
-            category: body.newTargetCategory || "General",
-            subcategory: body.newTargetSubcategory || "",
-            contact: phone || body.newTargetContact || "",
-            whatsapp: whatsapp || phone || "",
-            area: body.newTargetArea || "",
-            provider_id: authData.user.id,
-            is_approved: true,
-          })
-          .select("*")
-          .single();
+          .insert(insertData)
+          .select("*");
 
         if (createError) throw new Error(`Could not create service profile: ${createError.message}`);
-        finalTargetId = newTarget.id;
-        void triggerAutoNotification("services", newTarget);
+        finalTargetId = newTargets[0].id;
+        newTargets.forEach((target: any) => triggerAutoNotification("services", target));
       } else if (role === "auto_driver") {
         const { data: newTarget, error: createError } = await supabase
           .from("auto_drivers")

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import type { AdminTableConfig } from "@/lib/admin-tables";
 import { SendNotificationButton } from "./send-notification-button";
+import { ManageServicesModal } from "./manage-services-modal";
 
 type Row = Record<string, unknown>;
 type EditableRow = Record<string, string | boolean>;
@@ -105,6 +106,8 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingRows, setEditingRows] = useState<Record<string, EditableRow>>({});
+  const [managingUserId, setManagingUserId] = useState<string | null>(null);
+  const [managingUserName, setManagingUserName] = useState<string>("");
   
   // Advanced Navigation & Query State
   const [query, setQuery] = useState("");
@@ -773,6 +776,18 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                           >
                             Delete
                           </button>
+                          {config.key === "users" && (editable.role === "service_provider" || editable.role === "business") && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setManagingUserId(id);
+                                setManagingUserName(String(editable.name || "User"));
+                              }}
+                              className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-blue-600 hover:bg-blue-100 active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50"
+                            >
+                              Services
+                            </button>
+                          )}
                         </div>
                       </td>
 
@@ -915,6 +930,18 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
             </div>
           </div>
         </div>
+      )}
+      
+      {managingUserId && (
+        <ManageServicesModal
+          userId={managingUserId}
+          userName={managingUserName}
+          isOpen={!!managingUserId}
+          onClose={() => {
+            setManagingUserId(null);
+            setManagingUserName("");
+          }}
+        />
       )}
     </div>
   );
