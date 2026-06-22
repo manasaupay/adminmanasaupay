@@ -33,15 +33,27 @@ export default function DashboardPage() {
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activityRange, setActivityRange] = useState<ActivityRangeKey>("24h");
-
-  // Simulated Revenue Snapshot Stats based on operational rules
+  
   const [revenue, setRevenue] = useState({
-    sponsored: 18450,
-    banners: 24900,
-    featured: 14200,
-    monthly: 65800,
-    lifetime: 782400,
+    sponsored: 0,
+    banners: 0,
+    featured: 0,
+    monthly: 0,
+    lifetime: 0,
   });
+
+  const getLatestActivityText = () => {
+    if (activityEvents.length === 0) return "No recent system activity";
+    const latest = activityEvents[0];
+    if (!latest.time) return "Recent activity recorded";
+    const diffMs = Date.now() - new Date(latest.time).getTime();
+    const diffMins = Math.floor(diffMs / (60 * 1000));
+    if (diffMins < 1) return "Latest activity: just now";
+    if (diffMins < 60) return `Latest activity: ${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Latest activity: ${diffHours}h ago`;
+    return `Latest activity: ${new Date(latest.time).toLocaleDateString()}`;
+  };
 
   const activityRanges: { key: ActivityRangeKey; label: string }[] = [
     { key: "today", label: "Today" },
@@ -71,8 +83,8 @@ export default function DashboardPage() {
 
       setStats({
         users: String(uCount),
-        activeUsersToday: String(data.activeUsersToday ?? data.newRegistrations ?? Math.round(uCount * 0.15)),
-        newRegistrations: String(data.newRegistrations ?? Math.round(uCount * 0.02)),
+        activeUsersToday: String(data.activeUsersToday ?? 0),
+        newRegistrations: String(data.newRegistrations ?? 0),
         businesses: String(bCount),
         services: String(sCount),
         jobs: String(jCount),
@@ -93,11 +105,11 @@ export default function DashboardPage() {
       const monthlySum = calculatedSponsored + calculatedBanners + calculatedFeatured;
 
       setRevenue({
-        sponsored: calculatedSponsored || 18450,
-        banners: calculatedBanners || 24900,
-        featured: calculatedFeatured || 14200,
-        monthly: monthlySum || 65800,
-        lifetime: (monthlySum * 12) + 65800 || 782400,
+        sponsored: calculatedSponsored,
+        banners: calculatedBanners,
+        featured: calculatedFeatured,
+        monthly: monthlySum,
+        lifetime: monthlySum * 12,
       });
 
     } catch (err) {
@@ -281,7 +293,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 animate-fade-in">
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -311,7 +323,7 @@ export default function DashboardPage() {
             </svg>
             Sync Platform State
           </button>
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-250 px-4 py-2.5 rounded-2xl shadow-sm text-emerald-800 font-black text-xs">
+          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-250 px-4 py-2.5 rounded-2xl shadow-sm text-emerald-800 font-black text-xs animate-pulse-glow">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
             LIVE NODE: ACTIVE
           </div>
@@ -331,8 +343,12 @@ export default function DashboardPage() {
       <section className="space-y-4">
         <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Platform Health Indicator</h2>
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-          {healthCards.map((card) => (
-            <div key={card.label} className="glass-card rounded-2xl p-5 bg-white border border-slate-100 shadow-sm relative overflow-hidden transition-all duration-200 hover:shadow-md hover:border-teal-500/20">
+          {healthCards.map((card, index) => (
+            <div 
+              key={card.label} 
+              className="glass-card glow-hover animate-slide-up rounded-2xl p-5 bg-white border border-slate-100 shadow-sm relative overflow-hidden"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
               <div className="flex items-center justify-between gap-3 relative z-10">
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{card.label}</span>
                 <div className={`h-8 w-8 rounded-lg ${card.bg} flex items-center justify-center border border-transparent`}>
@@ -448,9 +464,9 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100/60 pt-4 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
             <span className="flex items-center gap-1.5 text-slate-500">
               <span className="h-2 w-2 rounded-full bg-teal-500" />
-              Latest Payment received: 8 mins ago
+              {getLatestActivityText()}
             </span>
-            <Link href="/export-center" className="text-teal-600 hover:underline">
+            <Link href="/export-center" className="text-teal-650 hover:underline">
               Download Revenue Statement &rarr;
             </Link>
           </div>
@@ -533,14 +549,16 @@ export default function DashboardPage() {
       <section className="space-y-4">
         <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Hyperlocal Operations Command Center</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {NAV_GROUPS.flatMap((group) => 
-            group.items.map((item) => {
+          {NAV_GROUPS.flatMap((group, gIdx) => 
+            group.items.map((item, iIdx) => {
               if (item.href === "/") return null;
+              const delay = (gIdx * 3 + iIdx) * 20;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group flex flex-col justify-between rounded-2xl border border-slate-150 bg-white p-5 transition-all duration-200 hover:border-teal-500/20 hover:bg-slate-50/50 hover:shadow-md relative overflow-hidden"
+                  className="group flex flex-col justify-between rounded-2xl border border-slate-150 bg-white p-5 transition-all duration-300 hover:border-teal-500/20 hover:bg-slate-50/50 hover:shadow-lg hover:shadow-teal-500/5 hover:-translate-y-1 relative overflow-hidden animate-slide-up"
+                  style={{ animationDelay: `${delay}ms` }}
                 >
                   <div>
                     <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{group.title}</span>

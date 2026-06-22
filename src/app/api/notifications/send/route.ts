@@ -142,8 +142,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Persist real sent and failed token counts inside target_meta JSONB
+  await supabase
+    .from("notifications")
+    .update({
+      target_meta: {
+        ...(notification.target_meta || {}),
+        sent_count: sent,
+        failed_count: failed,
+      },
+    })
+    .eq("id", notification.id);
+
   return NextResponse.json({
-    notification,
+    notification: {
+      ...notification,
+      target_meta: {
+        ...(notification.target_meta || {}),
+        sent_count: sent,
+        failed_count: failed,
+      },
+    },
     sent,
     failed,
     failedTokens: failedTokens.slice(0, 20),

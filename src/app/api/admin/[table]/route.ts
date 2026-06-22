@@ -251,9 +251,25 @@ export async function triggerAutoNotification(table: string, data: AdminRow) {
         };
 
         // Send in multicast chunks of 500
+        let sent = 0;
+        let failed = 0;
         for (let i = 0; i < uniqueTokens.length; i += 500) {
           const chunk = uniqueTokens.slice(i, i + 500);
-          await messaging.sendEachForMulticast({ ...fcmMessage, tokens: chunk });
+          const response = await messaging.sendEachForMulticast({ ...fcmMessage, tokens: chunk });
+          sent += response.successCount;
+          failed += response.failureCount;
+        }
+
+        if (dbNotification?.id) {
+          await supabase
+            .from("notifications")
+            .update({
+              target_meta: {
+                sent_count: sent,
+                failed_count: failed,
+              }
+            })
+            .eq("id", dbNotification.id);
         }
       }
     }

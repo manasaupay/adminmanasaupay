@@ -54,20 +54,20 @@ export function AdminSidebar() {
         })}
       </div>
     </div>
-    <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-200 bg-white shadow-[1px_0_5px_rgba(0,0,0,0.01)] lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-76 shrink-0 flex-col border-r border-slate-150 bg-white/90 backdrop-blur-md shadow-[1px_0_10px_rgba(0,0,0,0.015)] lg:flex">
       {/* Brand Header */}
-      <div className="border-b border-slate-100 px-6 py-5 flex items-center justify-between">
+      <div className="border-b border-slate-100/80 px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-200 glow-active">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal-500/10 to-emerald-500/20 flex items-center justify-center border border-teal-200/50 glow-active">
             <svg className="h-5 w-5 text-teal-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
           <div>
             <p className="text-base font-black tracking-tight text-slate-900 flex items-center gap-1.5">
-              Manasa <span className="text-teal-700 font-bold text-[10px] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">OPS</span>
+              Manasa <span className="text-teal-700 font-extrabold text-[10px] bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">OPS</span>
             </p>
-            <p className="text-[9px] uppercase font-bold tracking-widest text-slate-400">Hyperlocal Control</p>
+            <p className="text-[9px] uppercase font-black tracking-widest text-slate-400">Hyperlocal Control</p>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function AdminSidebar() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search operations tab..."
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/40 focus:bg-white focus:ring-2 focus:ring-teal-500/10 outline-none transition-all"
+            className="w-full rounded-xl border border-slate-200/80 bg-slate-50/50 pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:border-teal-500/30 focus:bg-white focus:ring-4 focus:ring-teal-500/5 outline-none transition-all duration-200"
           />
           {searchQuery && (
             <button
@@ -101,10 +101,10 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation list */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-4 py-3 scrollbar-thin">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3.5 py-3 scrollbar-thin">
         {filteredGroups.map((group) => (
-          <div key={group.title} className="space-y-1">
-            <div className="px-3.5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">
+          <div key={group.title} className="space-y-1.5">
+            <div className="px-3.5 text-[9px] font-black uppercase tracking-[0.25em] text-slate-400/90">
               {group.title}
             </div>
             <div className="space-y-0.5">
@@ -114,9 +114,9 @@ export function AdminSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`group flex items-center gap-3 rounded-xl px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-200 border ${
+                    className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold tracking-wide transition-all duration-200 border ${
                       active
-                        ? "bg-teal-50/80 text-teal-700 border-teal-100 shadow-[0_2px_8px_-1px_rgba(13,148,136,0.08)]"
+                        ? "bg-gradient-to-r from-teal-500/10 to-teal-500/0 text-teal-850 border-teal-500/20 shadow-[0_2px_8px_-1px_rgba(13,148,136,0.05)] font-bold"
                         : "text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
@@ -125,7 +125,7 @@ export function AdminSidebar() {
                     </span>
                     <span className="flex-1 truncate">{item.label}</span>
                     {active && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_rgba(20,184,166,0.5)]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.8)]" />
                     )}
                   </Link>
                 );

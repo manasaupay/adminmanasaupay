@@ -15,64 +15,71 @@ export default function ExportCenterPage() {
     setCompiling(true);
     setSuccess(false);
 
-    // Simulate high-fidelity query and compilation
-    setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/admin/${table}`);
-        const data = await res.json();
-        
-        let fileContent = "";
-        let filename = `${table}_export.${format}`;
-
-        if (format === "csv" && Array.isArray(data)) {
-          if (data.length > 0) {
-            const keys = Object.keys(data[0]);
-            const headers = keys.map((k) => `"${k.replace(/"/g, '""')}"`).join(",");
-            const rows = data.map((row) =>
-              keys
-                .map((key) => {
-                  const val = row[key];
-                  const str = val === null || val === undefined ? "" : typeof val === "object" ? JSON.stringify(val) : String(val);
-                  return `"${str.replace(/"/g, '""')}"`;
-                })
-                .join(",")
-            );
-            fileContent = [headers, ...rows].join("\n");
-          } else {
-            fileContent = "No records found matching filters.";
-          }
-        } else {
-          // Fallback mockup spreadsheet representation for Excel/PDF
-          fileContent = `--- Manasa Upay Operations Report ---\nExport Table: ${table.toUpperCase()}\nFormat: ${format.toUpperCase()}\nGenerated Range: ${startDate || "Lifetime"} to ${endDate || "Present"}\n\nCompiled successfully.`;
-        }
-
-        const blob = new Blob([fileContent], { type: "text/plain;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setCompiling(false);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } catch (err) {
-        setCompiling(false);
-        alert("Compilation warning: exporting fallback mockup files.");
-        
-        // Mock compile fallback
-        const blob = new Blob([`mock,data,export\n1,2,3`], { type: "text/plain;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${table}_fallback_export.${format}`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    try {
+      const res = await fetch(`/api/admin/${table}`);
+      const data = await res.json();
+      
+      let filteredData = Array.isArray(data) ? data : [];
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        filteredData = filteredData.filter((row: any) => {
+          const dateVal = row.created_at || row.started_at || row.date || row.published_at || row.event_date;
+          return dateVal ? new Date(dateVal) >= start : true;
+        });
       }
-    }, 1500);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filteredData = filteredData.filter((row: any) => {
+          const dateVal = row.created_at || row.started_at || row.date || row.published_at || row.event_date;
+          return dateVal ? new Date(dateVal) <= end : true;
+        });
+      }
+
+      let fileContent = "";
+      let filename = `${table}_export.${format}`;
+      let mimeType = "text/csv;charset=utf-8;";
+
+      if (format === "csv") {
+        if (filteredData.length > 0) {
+          const keys = Object.keys(filteredData[0]);
+          const headers = keys.map((k) => `"${k.replace(/"/g, '""')}"`).join(",");
+          const rows = filteredData.map((row) =>
+            keys
+              .map((key) => {
+                const val = row[key];
+                const str = val === null || val === undefined ? "" : typeof val === "object" ? JSON.stringify(val) : String(val);
+                return `"${str.replace(/"/g, '""')}"`;
+              })
+              .join(",")
+          );
+          fileContent = [headers, ...rows].join("\n");
+        } else {
+          fileContent = "No records found matching filters.";
+        }
+      } else if (format === "json") {
+        fileContent = JSON.stringify(filteredData, null, 2);
+        mimeType = "application/json;charset=utf-8;";
+      }
+
+      const blob = new Blob([fileContent], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setCompiling(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setCompiling(false);
+      alert("Error compiling data: failed to retrieve real database records.");
+      console.error(err);
+    }
   };
 
   return (
@@ -129,8 +136,7 @@ export default function ExportCenterPage() {
                   className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-3 text-xs text-slate-700 outline-none focus:border-teal-500 cursor-pointer font-bold"
                 >
                   <option value="csv">Standard CSV Spreadsheet</option>
-                  <option value="xlsx">Excel File (XLSX representation)</option>
-                  <option value="pdf">Document PDF (Formatted summary)</option>
+                  <option value="json">JSON Data Dump</option>
                 </select>
               </div>
             </div>

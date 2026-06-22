@@ -14,6 +14,8 @@ type PricingPackages = {
 
 type Invoice = {
   id: string;
+  dbId?: string;
+  dbTable?: string;
   vendorName: string;
   type: "sponsored" | "banner" | "featured";
   amount: number;
@@ -53,9 +55,13 @@ export default function RevenueOsPage() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const [resStats, resSettings] = await Promise.all([
+      const [resStats, resSettings, resSponsoredShops, resAds, resBusinesses, resServices] = await Promise.all([
         fetch("/api/stats"),
         fetch("/api/admin/settings"),
+        fetch("/api/admin/sponsored_shops"),
+        fetch("/api/admin/ads"),
+        fetch("/api/admin/businesses"),
+        fetch("/api/admin/services"),
       ]);
 
       const statsData = await resStats.json();
@@ -74,39 +80,96 @@ export default function RevenueOsPage() {
       const settingsList = Array.isArray(settingsData) ? settingsData : [];
       const pricingSetting = settingsList.find((s) => s.key === "revenue_pricing_packages");
 
+      let currentPackages = { ...packages };
       if (pricingSetting && pricingSetting.value) {
         try {
           const parsed = JSON.parse(pricingSetting.value);
-          setPackages((prev) => ({ ...prev, ...parsed }));
+          currentPackages = { ...currentPackages, ...parsed };
+          setPackages(currentPackages);
         } catch {
           // Ignore parse errors
         }
       }
 
       // Generate dynamic invoices based on active directory data
-      const mockInvoices: Invoice[] = [];
-      const shopNames = ["Verma Sweet Mansion", "Rathore Repairs", "Shree Balaji Electronics", "Apex Properties", "Modern Gym & Fitness", "Sharma Grocers", "Manasa Cafe & Restaurant"];
-      const types: Invoice["type"][] = ["sponsored", "banner", "featured"];
-      const methods = ["UPI (GPay/PhonePe)", "Razorpay Link", "Credit Card", "NetBanking"];
+      const sponsoredShopsList = resSponsoredShops.ok ? await resSponsoredShops.json() : [];
+      const adsList = resAds.ok ? await resAds.json() : [];
+      const businessesList = resBusinesses.ok ? await resBusinesses.json() : [];
+      const servicesList = resServices.ok ? await resServices.json() : [];
 
-      for (let i = 0; i < 8; i++) {
-        const vendor = shopNames[i % shopNames.length];
-        const type = types[i % types.length];
-        let amount = 250;
-        if (type === "banner") amount = 800;
-        else if (type === "featured") amount = 300;
+      const realInvoices: Invoice[] = [];
 
-        mockInvoices.push({
-          id: `INV-2026-0${i + 10}`,
-          vendorName: vendor,
-          type,
+      // 1. Process real ads
+      const activeAds = Array.isArray(adsList) ? adsList : [];
+      activeAds.forEach((ad: any) => {
+        let amount = currentPackages.inline_banner_fee;
+        if (ad.type === "slider") amount = currentPackages.inline_banner_fee + 200;
+        else if (ad.type === "popup") amount = currentPackages.inline_banner_fee * 1.5;
+        realInvoices.push({
+          id: `INV-AD-${ad.id.slice(0, 8).toUpperCase()}`,
+          dbId: ad.id,
+          dbTable: "ads",
+          vendorName: ad.title || `Banner Placement (${ad.type || "slider"})`,
+          type: "banner",
           amount,
-          date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-          status: i === 3 ? "pending" : i === 6 ? "failed" : "paid",
-          paymentMethod: methods[i % methods.length],
+          date: ad.created_at ? ad.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          status: ad.active ? "paid" : "failed",
+          paymentMethod: "Razorpay Link",
         });
-      }
-      setInvoices(mockInvoices);
+      });
+
+      // 2. Process real sponsored shops table
+      const activeSpons = Array.isArray(sponsoredShopsList) ? sponsoredShopsList : [];
+      activeSpons.forEach((shop: any) => {
+        const matchingBiz = Array.isArray(businessesList) 
+          ? businessesList.find((b: any) => b.id === shop.business_id) 
+          : null;
+        realInvoices.push({
+          id: `INV-SP-${shop.id.slice(0, 8).toUpperCase()}`,
+          dbId: shop.id,
+          dbTable: "sponsored_shops",
+          vendorName: matchingBiz?.name || "Sponsored Shop Slot",
+          type: "sponsored",
+          amount: currentPackages.sponsored_shop_fee,
+          date: shop.created_at ? shop.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          status: shop.active ? "paid" : "failed",
+          paymentMethod: "UPI (GPay/PhonePe)",
+        });
+      });
+
+      // 3. Process sponsored businesses
+      const allBiz = Array.isArray(businessesList) ? businessesList : [];
+      allBiz.filter((b: any) => b.is_sponsored || b.is_featured).forEach((biz: any) => {
+        realInvoices.push({
+          id: `INV-BZ-${biz.id.slice(0, 8).toUpperCase()}`,
+          dbId: biz.id,
+          dbTable: "businesses",
+          vendorName: biz.name || "Business Sponsor Upgrade",
+          type: biz.is_featured ? "featured" : "sponsored",
+          amount: biz.is_featured ? currentPackages.sponsored_shop_fee * 1.2 : currentPackages.sponsored_shop_fee,
+          date: biz.created_at ? biz.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          status: biz.is_approved ? "paid" : "pending",
+          paymentMethod: "UPI (GPay/PhonePe)",
+        });
+      });
+
+      // 4. Process sponsored services
+      const allSrv = Array.isArray(servicesList) ? servicesList : [];
+      allSrv.filter((s: any) => s.is_sponsored || s.is_featured).forEach((srv: any) => {
+        realInvoices.push({
+          id: `INV-SV-${srv.id.slice(0, 8).toUpperCase()}`,
+          dbId: srv.id,
+          dbTable: "services",
+          vendorName: srv.name || "Service Sponsor Upgrade",
+          type: srv.is_featured ? "featured" : "sponsored",
+          amount: srv.is_featured ? currentPackages.service_provider_fee * 1.5 : currentPackages.service_provider_fee,
+          date: srv.created_at ? srv.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          status: srv.is_approved ? "paid" : "pending",
+          paymentMethod: "NetBanking",
+        });
+      });
+
+      setInvoices(realInvoices);
 
     } catch {
       setErrorMsg("Failed to sync live revenue matrix.");
@@ -168,18 +231,56 @@ export default function RevenueOsPage() {
     }
   };
 
-  const handleUpdateStatus = (id: string, nextStatus: Invoice["status"]) => {
+  const handleUpdateStatus = async (invoice: Invoice, nextStatus: Invoice["status"]) => {
     setInvoices((prev) =>
-      prev.map((inv) => (inv.id === id ? { ...inv, status: nextStatus } : inv))
+      prev.map((inv) => (inv.id === invoice.id ? { ...inv, status: nextStatus } : inv))
     );
+
+    if (invoice.dbId && invoice.dbTable) {
+      try {
+        const payload: Record<string, any> = { id: invoice.dbId };
+        if (invoice.dbTable === "businesses" || invoice.dbTable === "services") {
+          payload.is_approved = nextStatus === "paid";
+        } else {
+          payload.active = nextStatus === "paid";
+        }
+
+        await fetch(`/api/admin/${invoice.dbTable}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch (err) {
+        console.error("Failed to update status in database:", err);
+      }
+    }
   };
 
-  const triggerRefund = (id: string) => {
-    if (confirm(`Are you sure you want to trigger a full refund for invoice ${id}?`)) {
+  const triggerRefund = async (invoice: Invoice) => {
+    if (confirm(`Are you sure you want to trigger a full refund for invoice ${invoice.id}?`)) {
       setInvoices((prev) =>
-        prev.map((inv) => (inv.id === id ? { ...inv, status: "failed" } : inv))
+        prev.map((inv) => (inv.id === invoice.id ? { ...inv, status: "failed" } : inv))
       );
-      alert(`Refund processed! Transaction ${id} has been voided.`);
+
+      if (invoice.dbId && invoice.dbTable) {
+        try {
+          const payload: Record<string, any> = { id: invoice.dbId };
+          if (invoice.dbTable === "businesses" || invoice.dbTable === "services") {
+            payload.is_approved = false;
+          } else {
+            payload.active = false;
+          }
+
+          await fetch(`/api/admin/${invoice.dbTable}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          alert(`Refund processed! Transaction ${invoice.id} has been voided.`);
+        } catch (err) {
+          console.error("Failed to void status in database:", err);
+        }
+      }
     }
   };
 
@@ -188,7 +289,7 @@ export default function RevenueOsPage() {
   const calculatedBanners = stats.totalAds * packages.inline_banner_fee;
   const calculatedFeatured = (stats.totalJobs * packages.job_featured_fee) + (stats.totalProperties * packages.property_featured_fee) + (stats.totalResale * packages.resale_featured_fee);
   const monthlySum = calculatedSponsored + calculatedBanners + calculatedFeatured;
-  const lifetimeSum = (monthlySum * 12) + 125000; // Simulated historical baseline
+  const lifetimeSum = monthlySum * 12;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -429,7 +530,7 @@ export default function RevenueOsPage() {
                       <td className="px-5 py-3 text-center flex items-center justify-center gap-1.5">
                         {inv.status === "pending" && (
                           <button
-                            onClick={() => handleUpdateStatus(inv.id, "paid")}
+                            onClick={() => handleUpdateStatus(inv, "paid")}
                             className="rounded bg-teal-50 border border-teal-150 px-2 py-1 text-[8px] font-black uppercase text-teal-700 hover:bg-teal-100 transition-colors cursor-pointer"
                           >
                             Mark Paid
@@ -437,7 +538,7 @@ export default function RevenueOsPage() {
                         )}
                         {inv.status === "paid" && (
                           <button
-                            onClick={() => triggerRefund(inv.id)}
+                            onClick={() => triggerRefund(inv)}
                             className="rounded bg-red-50 border border-red-150 px-2 py-1 text-[8px] font-black uppercase text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
                           >
                             Void/Refund

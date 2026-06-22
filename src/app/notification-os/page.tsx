@@ -53,8 +53,9 @@ export default function NotificationOsPage() {
 
       const parsed: NotificationCampaign[] = notifsList.map((item: any) => {
         const opened = analyticsList.filter((a: any) => a.event_name === "notification_open" && a.entity_id === String(item.id)).length;
-        const sentCount = 8400; // Simulated active device scope base
-        const delivered = Math.max(0, sentCount - 30);
+        const sentCount = item.target_meta?.sent_count ?? 0;
+        const failedCount = item.target_meta?.failed_count ?? 0;
+        const delivered = Math.max(0, sentCount - failedCount);
         
         return {
           id: String(item.id),
@@ -63,10 +64,10 @@ export default function NotificationOsPage() {
           audience: item.audience || "All Users",
           sent: sentCount,
           delivered,
-          failed: 30,
+          failed: failedCount,
           opened,
-          openRate: parseFloat(((opened / delivered) * 100).toFixed(1)) || 0,
-          ctr: parseFloat(((opened / sentCount) * 100).toFixed(1)) || 0,
+          openRate: delivered > 0 ? parseFloat(((opened / delivered) * 100).toFixed(1)) : 0,
+          ctr: sentCount > 0 ? parseFloat(((opened / sentCount) * 100).toFixed(1)) : 0,
           status: "sent",
         };
       });
