@@ -77,7 +77,7 @@ export function PartnerUserCard() {
         value: cat.key,
         label: cat.label ?? cat.key,
       }));
-  }, [form.newTargetCategory, options]);
+  }, [form.newTargetCategories, options]);
 
   // Client-side step validation
   const validateStep = (currentStep: number) => {
