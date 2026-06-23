@@ -30,6 +30,11 @@ const SETTINGS_INFO = {
       image_recommendation: "None."
     },
     {
+      title: "Operational Directories",
+      desc: "Instant switches to hide or display specific modules (Shops, Services, Auto Booking, Jobs, Properties, Resale, News, Events) across the mobile app.",
+      image_recommendation: "None."
+    },
+    {
       title: "Marketing & Ads",
       desc: "Enable/disable layout banners and sponsored priority rules. Set target advertisement click behaviors.",
       image_recommendation: "Banner Ad: 800 x 300 px. Popups: 600 x 600 px."
@@ -38,8 +43,31 @@ const SETTINGS_INFO = {
       title: "General & Support",
       desc: "Customer support numbers and WhatsApp redirection contact details.",
       image_recommendation: "None."
+    },
+    {
+      title: "Google Drive Backups",
+      desc: "Configure automated cloud database backups directly to your Google Drive account, with database state restoration.",
+      image_recommendation: "None."
     }
   ]
+};
+
+type BackupStatus = {
+  connected: boolean;
+  hasCredentials: boolean;
+  oauthUrl: string;
+  lastStatus: string;
+  schedule: { time: string; days: string[]; enabled: boolean };
+  logs: Array<{
+    timestamp: string;
+    type: "manual" | "auto" | "restore";
+    status: "success" | "failed";
+    message: string;
+    size_kb?: number;
+    file_id?: string;
+  }>;
+  clientId: string;
+  clientSecret: string;
 };
 
 export default function RedesignedSettingsPage() {
@@ -50,6 +78,13 @@ export default function RedesignedSettingsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("branding");
   const [showInfo, setShowInfo] = useState(false);
+
+  // Backup system state
+  const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupActionLoading, setBackupActionLoading] = useState<string | null>(null);
+  const [credClientId, setCredClientId] = useState("");
+  const [credClientSecret, setCredClientSecret] = useState("");
 
   // Temporary local values for edit states before saving
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
@@ -78,9 +113,44 @@ export default function RedesignedSettingsPage() {
     }
   };
 
+  const fetchBackupStatus = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await fetch("/api/admin/backup/status");
+      if (res.ok) {
+        const data = await res.json();
+        setBackupStatus(data);
+        setCredClientId(data.clientId || "");
+        setCredClientSecret(""); // Keep blank to avoid showing saved secret
+      }
+    } catch (e) {
+      console.error("Failed to fetch backup status", e);
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
+
+    // Check query params for backup outcomes
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("backup_connected") === "true") {
+      setSuccessMsg("Google Drive account linked successfully!");
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } else if (params.get("backup_error")) {
+      setError(decodeURIComponent(params.get("backup_error") || ""));
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => setError(null), 7000);
+    }
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "backups") {
+      fetchBackupStatus();
+    }
+  }, [activeTab, settings]);
 
   const saveSetting = async (id: string, newValue: string, newActive?: boolean) => {
     setSavingId(id);
@@ -131,6 +201,100 @@ export default function RedesignedSettingsPage() {
     saveSetting(id, currentValue, !currentActive);
   };
 
+  const handleSaveCredentials = async () => {
+    const cidSetting = settings.find((s) => s.key === "google_backup_client_id");
+    const csecSetting = settings.find((s) => s.key === "google_backup_client_secret");
+    
+    if (!cidSetting || !csecSetting) {
+      setError("Backup settings not seeded in database. Please run migrations first.");
+      return;
+    }
+
+    setBackupActionLoading("credentials");
+    try {
+      await saveSetting(cidSetting.id, credClientId);
+      if (credClientSecret) {
+        await saveSetting(csecSetting.id, credClientSecret);
+      }
+      setSuccessMsg("Google OAuth credentials saved.");
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await fetchBackupStatus();
+    } catch (e: any) {
+      setError(e.message || "Failed to save credentials");
+    } finally {
+      setBackupActionLoading(null);
+    }
+  };
+
+  const handleDisconnectBackup = async () => {
+    if (!confirm("Are you sure you want to unlink your Google Drive account?")) return;
+    const tokenSetting = settings.find((s) => s.key === "google_backup_refresh_token");
+    if (!tokenSetting) return;
+
+    setBackupActionLoading("disconnect");
+    try {
+      await saveSetting(tokenSetting.id, "");
+      setSuccessMsg("Google Account disconnected successfully.");
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await fetchBackupStatus();
+    } catch (e: any) {
+      setError(e.message || "Failed to disconnect");
+    } finally {
+      setBackupActionLoading(null);
+    }
+  };
+
+  const handleUpdateSchedule = async (newSchedule: any) => {
+    const scheduleSetting = settings.find((s) => s.key === "google_backup_schedule");
+    if (!scheduleSetting) return;
+
+    setBackupActionLoading("schedule");
+    try {
+      await saveSetting(scheduleSetting.id, JSON.stringify(newSchedule));
+      setSuccessMsg("Backup schedule updated.");
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await fetchBackupStatus();
+    } catch (e: any) {
+      setError(e.message || "Failed to update schedule");
+    } finally {
+      setBackupActionLoading(null);
+    }
+  };
+
+  const handleBackupNow = async () => {
+    if (!confirm("Are you sure you want to trigger a manual backup to Google Drive now?")) return;
+    setBackupActionLoading("backup");
+    try {
+      const res = await fetch("/api/admin/backup/trigger", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Backup failed");
+      setSuccessMsg("Backup successfully uploaded to Google Drive.");
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await fetchBackupStatus();
+    } catch (e: any) {
+      setError(e.message || "Failed to trigger backup");
+    } finally {
+      setBackupActionLoading(null);
+    }
+  };
+
+  const handleRestoreNow = async () => {
+    if (!confirm("WARNING: This will overwrite all tables in your database with the latest Google Drive backup. This cannot be undone. Are you sure you want to proceed?")) return;
+    setBackupActionLoading("restore");
+    try {
+      const res = await fetch("/api/admin/backup/restore", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Restore failed");
+      setSuccessMsg("Database successfully restored from latest Google Drive backup.");
+      setTimeout(() => setSuccessMsg(null), 5000);
+      await fetchBackupStatus();
+    } catch (e: any) {
+      setError(e.message || "Failed to restore database");
+    } finally {
+      setBackupActionLoading(null);
+    }
+  };
+
   const groupedSettings = settings.reduce((acc, curr) => {
     const group = curr.group_name;
     if (!acc[group]) acc[group] = [];
@@ -141,10 +305,14 @@ export default function RedesignedSettingsPage() {
   const tabs = [
     { key: "branding", label: "App Branding", icon: "🎨" },
     { key: "features", label: "Core Features", icon: "⚡" },
+    { key: "directories", label: "Operational Directories", icon: "📁" },
     { key: "ads", label: "Marketing & Ads", icon: "📢" },
     { key: "notifications", label: "Notifications", icon: "🔔" },
+    { key: "backups", label: "Google Backup", icon: "☁️" },
     { key: "general", label: "General Config", icon: "⚙️" },
   ];
+
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
     <div className="space-y-6">
@@ -199,7 +367,7 @@ export default function RedesignedSettingsPage() {
         <aside className="glass-card rounded-3xl border border-slate-200 bg-white p-3.5 shadow-sm h-fit space-y-1.5">
           <p className="px-3.5 pb-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Settings Groups</p>
           {tabs.map((tab) => {
-            const count = groupedSettings[tab.key]?.length ?? 0;
+            const count = tab.key === "backups" ? (backupStatus?.connected ? 1 : 0) : (groupedSettings[tab.key]?.length ?? 0);
             const active = activeTab === tab.key;
             return (
               <button
@@ -228,11 +396,262 @@ export default function RedesignedSettingsPage() {
         {/* Dynamic Settings Fields Card */}
         <section className="glass-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
           <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-lg font-black text-slate-900 capitalize">{activeTab} Controls</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Edit active config values below. Changes apply instantly.</p>
+            <h2 className="text-lg font-black text-slate-900 capitalize">{activeTab === "backups" ? "Google Backup Dashboard" : `${activeTab} Controls`}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {activeTab === "backups" 
+                ? "Configure automated background and manual database backups to Google Drive." 
+                : "Edit active config values below. Changes apply instantly."}
+            </p>
           </div>
 
-          {loading ? (
+          {activeTab === "backups" ? (
+            backupLoading || !backupStatus ? (
+              <div className="flex flex-col items-center gap-3 py-16 justify-center">
+                <span className="h-4 w-4 rounded-full bg-teal-500 glow-active shadow-[0_0_12px_rgba(20,184,166,0.4)] animate-pulse" />
+                <p className="text-xs font-bold text-slate-400 tracking-wider uppercase animate-pulse">Syncing backup status...</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* 1. Google OAuth Setup Card */}
+                <div className="p-6 border border-slate-200 rounded-3xl bg-slate-50/40 space-y-6">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">1. Google API Connection</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Link a Google Account to enable database exports directly to Google Drive.</p>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-400">Google OAuth Client ID</label>
+                      <input
+                        type="text"
+                        value={credClientId}
+                        onChange={(e) => setCredClientId(e.target.value)}
+                        placeholder="Paste Google Client ID"
+                        className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-teal-500/40"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-slate-400">Google OAuth Client Secret</label>
+                      <input
+                        type="password"
+                        value={credClientSecret}
+                        onChange={(e) => setCredClientSecret(e.target.value)}
+                        placeholder={backupStatus.hasCredentials ? "••••••••••••" : "Paste Google Client Secret"}
+                        className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-teal-500/40"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                    <button
+                      type="button"
+                      disabled={backupActionLoading === "credentials"}
+                      onClick={handleSaveCredentials}
+                      className="rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2 text-xs font-bold text-white transition-all disabled:opacity-50"
+                    >
+                      {backupActionLoading === "credentials" ? "Saving..." : "Save Credentials"}
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      {backupStatus.connected ? (
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Account Connected
+                          </span>
+                          <button
+                            type="button"
+                            disabled={backupActionLoading === "disconnect"}
+                            onClick={handleDisconnectBackup}
+                            className="text-xs font-bold text-red-600 hover:text-red-800 transition-colors"
+                          >
+                            {backupActionLoading === "disconnect" ? "Disconnecting..." : "Disconnect Account"}
+                          </button>
+                        </div>
+                      ) : backupStatus.oauthUrl ? (
+                        <a
+                          href={backupStatus.oauthUrl}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 px-4 py-2 text-xs font-bold text-white transition-all shadow-[0_2px_8px_rgba(13,148,136,0.15)]"
+                        >
+                          Link Google Account
+                        </a>
+                      ) : (
+                        <p className="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100">
+                          ⚠️ Configure Client ID and Secret above to authorize
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Automation Schedule Card */}
+                {backupStatus.connected && (
+                  <div className="p-6 border border-slate-200 rounded-3xl bg-slate-50/40 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">2. Automated Cloud Backups</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">Define background database export frequency.</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateSchedule({
+                          ...backupStatus.schedule,
+                          enabled: !backupStatus.schedule.enabled
+                        })}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          backupStatus.schedule.enabled ? "bg-teal-600" : "bg-slate-250"
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            backupStatus.schedule.enabled ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {backupStatus.schedule.enabled && (
+                      <div className="space-y-4 animate-fade-in">
+                        <div className="flex items-center gap-6 flex-wrap">
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-400">Daily Backup Time (24h)</span>
+                            <input
+                              type="time"
+                              value={backupStatus.schedule.time}
+                              onChange={(e) => handleUpdateSchedule({
+                                ...backupStatus.schedule,
+                                time: e.target.value
+                              })}
+                              className="rounded-xl border border-slate-250 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5 flex-1 min-w-[240px]">
+                            <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Select Days</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {daysOfWeek.map((day) => {
+                                const selected = backupStatus.schedule.days.includes(day);
+                                return (
+                                  <button
+                                    key={day}
+                                    type="button"
+                                    onClick={() => {
+                                      const nextDays = selected
+                                        ? backupStatus.schedule.days.filter((d) => d !== day)
+                                        : [...backupStatus.schedule.days, day];
+                                      handleUpdateSchedule({
+                                        ...backupStatus.schedule,
+                                        days: nextDays
+                                      });
+                                    }}
+                                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all border ${
+                                      selected
+                                        ? "bg-teal-50 border-teal-200 text-teal-700"
+                                        : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    {day}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. Manual Actions Card */}
+                {backupStatus.connected && (
+                  <div className="p-6 border border-slate-200 rounded-3xl bg-slate-50/40 space-y-6">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900">3. Database Sync & Operations</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Perform immediate cloud backups or restore the database state.</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                      <button
+                        type="button"
+                        disabled={backupActionLoading !== null}
+                        onClick={handleBackupNow}
+                        className="rounded-xl bg-teal-600 hover:bg-teal-700 px-4 py-2.5 text-xs font-black text-white transition-all hover:shadow-lg disabled:opacity-50 shrink-0"
+                      >
+                        {backupActionLoading === "backup" ? "Backing up..." : "Backup Now"}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={backupActionLoading !== null}
+                        onClick={handleRestoreNow}
+                        className="rounded-xl bg-white hover:bg-red-50 border border-red-200 hover:border-red-300 px-4 py-2.5 text-xs font-black text-red-650 transition-all disabled:opacity-50 shrink-0"
+                      >
+                        {backupActionLoading === "restore" ? "Restoring..." : "Restore Last Backup"}
+                      </button>
+                    </div>
+
+                    <div className="p-4 border border-rose-150 rounded-2xl bg-rose-50/45 text-rose-800 text-[10px] leading-relaxed">
+                      <strong>⚠️ CRITICAL DANGER ZONE ALERT:</strong> Restoring the database drops all existing tables and reloads them with data from your latest Google Drive backup. Active user sessions, pending bookings, and message history will be replaced. Ensure no critical operations are live before triggering restore.
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Backup History & Logs */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Activity Logs</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Historical records of automated schedules and manual triggers.</p>
+                  </div>
+
+                  {backupStatus.logs.length === 0 ? (
+                    <div className="p-10 text-center border border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs">
+                      No backup activities logged yet.
+                    </div>
+                  ) : (
+                    <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                      <table className="w-full border-collapse text-left text-xs font-semibold text-slate-700">
+                        <thead className="bg-slate-50 border-b border-slate-250 text-slate-400 text-[10px] uppercase font-bold">
+                          <tr>
+                            <th className="p-3">Time</th>
+                            <th className="p-3">Type</th>
+                            <th className="p-3">Status</th>
+                            <th className="p-3">Size (KB)</th>
+                            <th className="p-3">Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {backupStatus.logs.map((log, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="p-3 font-mono text-[10px] text-slate-500">
+                                {new Date(log.timestamp).toLocaleString()}
+                              </td>
+                              <td className="p-3 capitalize">{log.type}</td>
+                              <td className="p-3">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black ${
+                                  log.status === "success" 
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                                    : "bg-red-50 text-red-700 border border-red-100"
+                                }`}>
+                                  {log.status}
+                                </span>
+                              </td>
+                              <td className="p-3 font-mono text-[10px] text-slate-500">
+                                {log.size_kb ? `${log.size_kb} KB` : "-"}
+                              </td>
+                              <td className="p-3 text-[10px] font-medium text-slate-500 leading-normal max-w-xs truncate" title={log.message}>
+                                {log.message}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          ) : loading ? (
             <div className="flex flex-col items-center gap-3 py-16 justify-center">
               <span className="h-4 w-4 rounded-full bg-teal-500 glow-active shadow-[0_0_12px_rgba(20,184,166,0.4)] animate-pulse" />
               <p className="text-xs font-bold text-slate-400 tracking-wider uppercase animate-pulse">Syncing settings from DB...</p>

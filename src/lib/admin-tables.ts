@@ -594,6 +594,8 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
           "security",
           "ui",
           "features",
+          "directories",
+          "backups",
         ],
         type: "enum",
       },

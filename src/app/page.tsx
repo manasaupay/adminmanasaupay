@@ -584,7 +584,7 @@ export default function DashboardPage() {
         sections={[
           {
             title: "Platform Health Indicator",
-            desc: "Displays registered user volumes, live Agora call minutes, database storage consumption, and active partner directories."
+            desc: "Displays registered user volumes, live voice call minutes, database storage consumption, and active partner directories."
           },
           {
             title: "Missed Demand Opportunities",
