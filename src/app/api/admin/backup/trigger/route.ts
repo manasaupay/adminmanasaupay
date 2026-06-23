@@ -66,7 +66,6 @@ async function uploadToGoogleDrive(accessToken: string, filename: string, conten
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": `multipart/related; boundary=${boundary}`,
-      "Content-Length": String(multipartBody.length),
     },
     body: multipartBody,
   });
