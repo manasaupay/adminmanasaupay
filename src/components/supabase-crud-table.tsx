@@ -2,6 +2,14 @@
 
 import { useCallback, useEffect, useState, useMemo } from "react";
 import type { AdminTableConfig } from "@/lib/admin-tables";
+import {
+  callReadinessBadgeClass,
+  callReadinessLabel,
+  getPartnerCallReadiness,
+  isPartnerRole,
+  missingPermissionHints,
+  type PartnerCallReadiness,
+} from "@/lib/partner-call-permissions";
 import { SendNotificationButton } from "./send-notification-button";
 import { ManageServicesModal } from "./manage-services-modal";
 
@@ -55,7 +63,7 @@ const IMAGE_SIZE_GUIDE: Record<string, Record<string, string>> = {
 };
 
 const TABLE_EXPLANATIONS: Record<string, string> = {
-  users: "Displays all accounts registered. Admins can verify profiles, assign business or provider roles, or block accounts.",
+  users: "Displays all accounts registered. Partner rows show Call Status badges: Call Ready, Needs Permission Fix, or Not Synced Yet.",
   businesses: "Shops and corporate listings in Manasa. Toggle featured status to pin them, or sponsored for search priority.",
   services: "Individual technicians (plumbers, electricians, RO repair). Manage category indexing and verification.",
   auto_drivers: "Hyperlocal auto booking driver directory. Control availability and assigned service areas.",
@@ -115,6 +123,7 @@ function assignNested(payload: Record<string, unknown>, key: string, value: unkn
 function createBlankRow(config: AdminTableConfig): EditableRow {
   const row: EditableRow = {};
   config.columns.forEach((column) => {
+    if (column.key.startsWith("_")) return;
     row[column.key] = column.type === "boolean" ? false : "";
   });
   if (config.approveField) row[config.approveField] = false;
@@ -127,6 +136,7 @@ function createBlankRow(config: AdminTableConfig): EditableRow {
 function createEditableRow(config: AdminTableConfig, row: Row): EditableRow {
   const editable: EditableRow = {};
   config.columns.forEach((column) => {
+    if (column.key.startsWith("_")) return;
     const value = nestedValue(row, column.key);
     if (column.type === "date") {
       editable[column.key] = value === null || value === undefined ? "" : String(value).slice(0, 10);
@@ -192,6 +202,9 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [showColumnFilters, setShowColumnFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "active">("all");
+  const [callPermissionFilter, setCallPermissionFilter] = useState<
+    "all" | "partners" | PartnerCallReadiness
+  >("all");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => config.columns.map((c) => c.key));
@@ -352,6 +365,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     }
 
     config.columns.forEach((col) => {
+      if (col.key.startsWith("_")) return;
       const raw = values[col.key];
       if (raw === undefined) return;
       const write = (value: unknown) => {
@@ -446,6 +460,16 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
       result = result.filter((row) => row[config.activeField!] === true);
     }
 
+    if (config.key === "users" && callPermissionFilter !== "all") {
+      result = result.filter((row) => {
+        const readiness = getPartnerCallReadiness(row);
+        if (callPermissionFilter === "partners") {
+          return isPartnerRole(row.role);
+        }
+        return readiness === callPermissionFilter;
+      });
+    }
+
     // Global query search
     if (query.trim() !== "") {
       const q = query.toLowerCase().trim();
@@ -467,8 +491,14 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     // Sort order
     if (sortField) {
       result.sort((a, b) => {
-        let valA = nestedValue(a, sortField);
-        let valB = nestedValue(b, sortField);
+        let valA =
+          sortField === "_call_readiness"
+            ? getPartnerCallReadiness(a)
+            : nestedValue(a, sortField);
+        let valB =
+          sortField === "_call_readiness"
+            ? getPartnerCallReadiness(b)
+            : nestedValue(b, sortField);
         if (typeof valA === "string") valA = valA.toLowerCase();
         if (typeof valB === "string") valB = valB.toLowerCase();
         if (valA === null || valA === undefined) return 1;
@@ -480,7 +510,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     }
 
     return result;
-  }, [rows, query, columnFilters, statusFilter, sortField, sortDirection, config]);
+  }, [rows, query, columnFilters, statusFilter, callPermissionFilter, sortField, sortDirection, config]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredAndSortedRows.length / itemsPerPage);
@@ -500,6 +530,19 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
   const activeCount = config.activeField
     ? rows.filter((row) => row[config.activeField!] === true).length
     : rows.length;
+
+  const partnerCallReadyCount =
+    config.key === "users"
+      ? rows.filter((row) => getPartnerCallReadiness(row) === "call_ready").length
+      : 0;
+
+  const partnerNeedsFixCount =
+    config.key === "users"
+      ? rows.filter((row) => {
+          const status = getPartnerCallReadiness(row);
+          return status === "needs_fix" || status === "not_synced";
+        }).length
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -561,23 +604,49 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
         {/* Dynamic platform metrics */}
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition-all hover:bg-white hover:border-slate-200 shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
-            <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">Total Entries</p>
+            <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">
+              {config.key === "users" ? "Total Users" : "Total Entries"}
+            </p>
             <p className="mt-1 text-2xl font-black text-slate-900">{rows.length}</p>
           </div>
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition-all hover:bg-white hover:border-slate-200 shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
             <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">
-              {config.approveField ? "Pending Approval" : "Active In-app"}
+              {config.key === "users"
+                ? "Call Ready Partners"
+                : config.approveField
+                  ? "Pending Approval"
+                  : "Active In-app"}
             </p>
-            <p className={`mt-1 text-2xl font-black ${config.approveField && pendingCount > 0 ? "text-amber-600 animate-pulse" : "text-emerald-600"}`}>
-              {config.approveField ? pendingCount : activeCount}
+            <p
+              className={`mt-1 text-2xl font-black ${
+                config.key === "users"
+                  ? "text-emerald-600"
+                  : config.approveField && pendingCount > 0
+                    ? "text-amber-600 animate-pulse"
+                    : "text-emerald-600"
+              }`}
+            >
+              {config.key === "users"
+                ? partnerCallReadyCount
+                : config.approveField
+                  ? pendingCount
+                  : activeCount}
             </p>
           </div>
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition-all hover:bg-white hover:border-slate-200 shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)]">
             <p className="text-[10px] uppercase font-black tracking-wider text-slate-400">
-              Showing Filtered
+              {config.key === "users" ? "Needs Permission Fix" : "Showing Filtered"}
             </p>
-            <p className="mt-1 text-2xl font-black text-teal-600">
-              {filteredAndSortedRows.length}
+            <p
+              className={`mt-1 text-2xl font-black ${
+                config.key === "users"
+                  ? partnerNeedsFixCount > 0
+                    ? "text-red-600"
+                    : "text-emerald-600"
+                  : "text-teal-600"
+              }`}
+            >
+              {config.key === "users" ? partnerNeedsFixCount : filteredAndSortedRows.length}
             </p>
           </div>
         </div>
@@ -692,6 +761,39 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                   );
                 })}
               </div>
+
+              {config.key === "users" && (
+                <div className="flex flex-wrap gap-1 border border-slate-150 bg-slate-150 p-1 rounded-xl">
+                  {(
+                    [
+                      ["all", "All Users"],
+                      ["partners", "Partners"],
+                      ["call_ready", "Call Ready"],
+                      ["needs_fix", "Needs Fix"],
+                      ["not_synced", "Not Synced"],
+                    ] as const
+                  ).map(([filter, label]) => {
+                    const active = callPermissionFilter === filter;
+                    return (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => {
+                          setCallPermissionFilter(filter);
+                          setCurrentPage(1);
+                        }}
+                        className={`rounded-lg px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          active
+                            ? "bg-white text-teal-700 shadow-[0_1px_3px_rgba(0,0,0,0.06)] border border-slate-150"
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -772,7 +874,29 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                         const rawValue = nestedValue(row, c.key);
                         return (
                           <td key={c.key} className="px-5 py-3 max-w-xs truncate font-medium text-slate-700">
-                            {c.type === "image" ? (
+                            {c.key === "_call_readiness" ? (
+                              (() => {
+                                const readiness = getPartnerCallReadiness(row);
+                                if (readiness === "not_partner") {
+                                  return <span className="text-slate-400">—</span>;
+                                }
+                                return (
+                                  <div className="space-y-1">
+                                    <span
+                                      className={`badge-status ${callReadinessBadgeClass(readiness)}`}
+                                      title={missingPermissionHints(row)}
+                                    >
+                                      {callReadinessLabel(readiness)}
+                                    </span>
+                                    {readiness !== "call_ready" && (
+                                      <p className="text-[10px] text-slate-400 truncate max-w-[180px]">
+                                        {missingPermissionHints(row)}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()
+                            ) : c.type === "image" ? (
                               rawValue && String(rawValue).startsWith("http") ? (
                                 <a href={String(rawValue)} target="_blank" rel="noreferrer" className="flex items-center gap-2 group cursor-pointer">
                                   <div className="h-8 w-12 rounded border border-slate-200 overflow-hidden bg-slate-50 shadow-sm shrink-0 transition-transform group-hover:scale-105">
@@ -1017,7 +1141,9 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
 
             {/* Form Fields Grid: 2 Columns on Laptop/Desktop */}
             <form onSubmit={(e) => e.preventDefault()} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {config.columns.map((col) => {
+              {config.columns
+                .filter((col) => !col.key.startsWith("_"))
+                .map((col) => {
                 const guideText = IMAGE_SIZE_GUIDE[config.key]?.[col.key];
                 return (
                   <div key={col.key} className="space-y-1.5">

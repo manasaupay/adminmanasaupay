@@ -122,8 +122,32 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
         ],
         type: "enum",
       },
+      { key: "_call_readiness", label: "Call Status" },
       { key: "is_verified", label: "Verified", type: "boolean" },
       { key: "is_blocked", label: "Blocked", type: "boolean" },
+      {
+        key: "meta.partner_call_permissions.notification_permission",
+        label: "Call Notif",
+        type: "boolean",
+      },
+      {
+        key: "meta.partner_call_permissions.full_screen_intent_permission",
+        label: "Full Screen",
+        type: "boolean",
+      },
+      {
+        key: "meta.partner_call_permissions.battery_optimization_ignored",
+        label: "Battery Free",
+        type: "boolean",
+      },
+      {
+        key: "meta.partner_call_permissions.last_synced_at",
+        label: "Perm Sync",
+      },
+      {
+        key: "meta.partner_call_permissions.permission_summary",
+        label: "Call Permission Summary",
+      },
       { key: "meta.notes", label: "Admin Notes" },
     ],
   },
