@@ -640,6 +640,13 @@ export const ADMIN_TABLES: Record<AdminTableKey, AdminTableConfig> = {
       { key: "business_id", label: "Business", optionSource: "businesses" },
       { key: "description", label: "Description" },
       { key: "price", label: "Price" },
+      { key: "meta.mrp", label: "MRP" },
+      {
+        key: "meta.discount_type",
+        label: "Discount Display Mode",
+        type: "enum",
+        options: ["percent", "amount"],
+      },
       { key: "image_url", label: "Image", type: "image" },
       { key: "buy_link", label: "Buy Link", type: "url" },
       { key: "meta.sku", label: "SKU" },

@@ -331,8 +331,15 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
     }));
   }
 
-  function formatValue(value: unknown) {
-    return value === null || value === undefined ? "" : String(value);
+  function formatValue(value: unknown, column?: AdminTableConfig["columns"][number]) {
+    if (value === null || value === undefined) return "";
+    const strVal = String(value);
+    if (column?.optionSource) {
+      const opts = dynamicOptions[column.optionSource] ?? [];
+      const match = opts.find((o) => o.value === strVal);
+      if (match) return match.label;
+    }
+    return strVal;
   }
 
   function optionsFor(column: AdminTableConfig["columns"][number]) {
@@ -926,7 +933,7 @@ export function SupabaseCrudTable({ config }: { config: AdminTableConfig }) {
                                 {rawValue ? "JSON Data" : "Empty"}
                               </span>
                             ) : (
-                              formatValue(rawValue)
+                              formatValue(rawValue, c)
                             )}
                           </td>
                         );
